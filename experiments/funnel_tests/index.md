@@ -10,4 +10,5 @@
 
 ## 記録
 
-（まだなし — run_lead_funnel_check.py が毎週金曜 logs/weekly/ に記録中）
+run_lead_funnel_check.py の出力先: `logs/weekly/{date}_funnel.md`
+転記タイミング: 毎週金曜の週次レビュー時にまとめる。

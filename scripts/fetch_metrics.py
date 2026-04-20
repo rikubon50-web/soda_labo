@@ -37,7 +37,13 @@ def fetch_and_save(days: int) -> None:
 
     import tweepy
 
-    client = tweepy.Client(bearer_token=os.environ["X_BEARER_TOKEN"])
+    client = tweepy.Client(
+        bearer_token=os.environ["X_BEARER_TOKEN"],
+        consumer_key=os.environ["X_API_KEY"],
+        consumer_secret=os.environ["X_API_SECRET"],
+        access_token=os.environ["X_ACCESS_TOKEN"],
+        access_token_secret=os.environ["X_ACCESS_TOKEN_SECRET"],
+    )
 
     metrics_by_date: dict[str, list] = {}
 

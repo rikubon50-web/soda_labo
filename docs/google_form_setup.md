@@ -40,7 +40,7 @@
 
 1. [drive.google.com](https://drive.google.com) を開く
 2. 「マイドライブ」→「新規」→「ファイルのアップロード」
-3. `/Users/rikubon50/Desktop/SODA/products/lead_magnet_ai_team_template.md` をアップロード
+3. `/Users/rikubon50/Desktop/SODA_LABO/products/lead_magnet_ai_team_template.md` をアップロード
    （または PDF に変換してからアップロードする）
 4. アップロードしたファイルを右クリック→「共有」→「リンクを知っている全員」に変更
 5. 「リンクをコピー」して保存

@@ -186,7 +186,7 @@ def build_email_body(today: date) -> tuple[str, str]:
 
     lines += [
         "=" * 50,
-        "ログ場所: ~/Desktop/SODA/logs/",
+        "ログ場所: ~/Desktop/SODA_LABO/logs/",
         "手動実行: python3 scripts/<スクリプト名>.py",
     ]
 

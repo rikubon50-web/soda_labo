@@ -3,7 +3,7 @@
 
 export PATH="/Users/rikubon50/.pyenv/shims:/Users/rikubon50/.pyenv/bin:/Users/rikubon50/.local/bin:/usr/local/bin:/usr/bin:/bin"
 
-SODA_DIR="/Users/rikubon50/Desktop/SODA"
+SODA_DIR="/Users/rikubon50/Desktop/SODA_LABO"
 CLAUDE="/Users/rikubon50/.local/bin/claude"
 LOG_DIR="$SODA_DIR/logs/cron"
 TODAY=$(date +%Y-%m-%d)
@@ -64,10 +64,9 @@ agents/secretary.md のログ形式に従い logs/daily/${TODAY}.md を作成し
 - ファイル保存はWrite/Editツールを使って実際に書き込む"
 
 # ─── Claudeパイプライン（Step 1-7）───────────────────────────
-"$CLAUDE" -p \
+echo "$PROMPT" | "$CLAUDE" -p \
   --dangerously-skip-permissions \
   --allowedTools "Read,Write,Edit,Glob,Grep,Bash" \
-  "$PROMPT" \
   >> "$LOG_DIR/${TODAY}_run.log" 2>&1
 CLAUDE_EXIT=$?
 

@@ -18,4 +18,5 @@
 
 ## 記録
 
-（まだなし — run_cta_review.py が毎日 logs/daily/{date}_cta.md に記録中）
+run_cta_review.py の出力先: `logs/daily/{date}_cta.md`
+このファイルへの転記タイミング: 週次レビュー時に手動でまとめる
