@@ -1,0 +1,31 @@
+Error: Input must be provided either through stdin or as a prompt argument when using --print
+[Mon Apr 20 09:16:59 JST 2026] Claude パイプライン完了（exit: 1）
+エラー通知送信: Claudeパイプライン（Step1-7）
+[Mon Apr 20 09:17:02 JST 2026] X朝投稿開始: /Users/rikubon50/Desktop/SODA/content/x_posts/2026-04-20_day3-editor.md
+投稿完了: 朝（1本目）ID: 2046020279873519676
+[Mon Apr 20 09:17:02 JST 2026] X朝投稿完了（exit: 0）
+[Mon Apr 20 09:17:02 JST 2026] note投稿開始: /Users/rikubon50/Desktop/SODA/content/note/2026-04-20_ai-studio-day3.md
+モデル使用: models/gemini-3-pro-image-preview
+サムネイル生成完了: /Users/rikubon50/Desktop/SODA/content/thumbnails/2026-04-20_AIメディアDay3_EditorとWriterの指示書が重.png
+CEOスコア: 4 → 公開します
+[DEBUG] notes/new 後のURL: https://editor.note.com/notes/nc45eb26edd68/edit/
+タイトル入力完了: AIメディアDay3：EditorとWriterの指示書が重なった。どこを切り分けたか全部書く
+本文ペースト完了（先頭: 昨日「明日Editorの指示書を直す」と書いた。今日やった。直して初めて見えたこ...）
+[DEBUG] eyecatch候補ボタン: x=497 y=101
+サムネイル保存完了
+サムネイルアップロード完了
+公開完了: AIメディアDay3：EditorとWriterの指示書が重なった。どこを切り分けたか全部書く
+note URL保存: https://note.com/info/n/n49bbcbdefe1a
+[Mon Apr 20 09:18:04 JST 2026] note投稿完了（exit: 0）
+[Mon Apr 20 09:18:04 JST 2026] 全工程完了
+[Mon Apr 20 09:18:04 JST 2026] メトリクス取得開始
+警告: ツイートID 2046017765820223720 の取得失敗 → 401 Unauthorized
+Unauthorized
+警告: ツイートID 2046017767951011917 の取得失敗 → 401 Unauthorized
+Unauthorized
+警告: ツイートID 2046017770077446252 の取得失敗 → 401 Unauthorized
+Unauthorized
+警告: ツイートID 2046020279873519676 の取得失敗 → 401 Unauthorized
+Unauthorized
+保存: /Users/rikubon50/Desktop/SODA/logs/metrics/2026-04-20.json
+[Mon Apr 20 09:18:05 JST 2026] メトリクス取得完了（exit: 0）
