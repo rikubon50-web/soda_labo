@@ -130,10 +130,9 @@ def build_prompt(data: dict) -> str:
         for f in data["meeting_files"]:
             # 改善アクションセクションだけ抜粋
             content = f["content"]
-            start = content.find("## 5. 改善アクション")
-            end = content.find("## 6. 本日の役割分担")
-            if start != -1 and end != -1:
-                excerpt = content[start:end].strip()[:800]
+            start = content.find("## 改善アクション")
+            if start != -1:
+                excerpt = content[start:].strip()[:800]
             else:
                 excerpt = content[:400]
             sections.append(f"### {f['date']}\n{excerpt}")
@@ -260,6 +259,7 @@ def main():
         cwd=str(SODA_DIR),
         capture_output=True,
         text=True,
+        timeout=1800,
     )
 
     log_file.write_text(result.stdout + result.stderr)

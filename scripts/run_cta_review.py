@@ -154,6 +154,7 @@ def main():
         cwd=str(SODA_DIR),
         capture_output=True,
         text=True,
+        timeout=1800,
     )
 
     log_file.write_text(result.stdout + result.stderr)

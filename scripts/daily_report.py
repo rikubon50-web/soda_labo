@@ -26,6 +26,7 @@ SYSTEMS = [
     ("投稿分析",                           "08:45", "logs/cron/post_analysis.log",    "logs/daily/{date}_post_analysis.md"),
     ("アイデア資産化",                     "09:00", "logs/cron/idea_mining.log",      "logs/ideas/{date}_ideas.md"),
     ("X昼投稿",                            "12:00", "logs/cron/x_noon.log",           None),
+    ("X自動リプライ",                      "12:30", "logs/cron/auto_reply.log",        None),
     ("CTA改善",                            "18:00", "logs/cron/cta.log",              "logs/daily/{date}_cta.md"),
     ("X夜投稿",                            "20:00", "logs/cron/x_evening.log",        None),
     ("商品メモ",                           "21:00", "logs/cron/product_memo.log",     "logs/daily/{date}_product_memo.md"),

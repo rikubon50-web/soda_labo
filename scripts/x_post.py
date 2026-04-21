@@ -122,26 +122,25 @@ def post_one(filepath: str, post_number: int, dry_run: bool = False) -> None:
     content, hashtags = posts_and_tags[post_number - 1]
     label = ["朝", "昼", "夜"][post_number - 1] if post_number <= 3 else str(post_number)
 
-    # 夜投稿（3本目）にnote URLを追加（ハッシュタグ分のスペースも考慮）
+    post = build_post_text(content, hashtags)
+
+    # 夜投稿（3本目）にnote URLを追加（build_post_text後に付けてURLが切れないようにする）
     if post_number == 3:
         note_url = load_note_url()
         if note_url:
-            tag_reserve = len("\n" + hashtags) if hashtags else 0
-            content = append_note_url(content, note_url, max_body=117 - tag_reserve)
+            post = post + f"\n\nnote→ {note_url}"
             print(f"note URL追加: {note_url}")
         else:
             print("note URLファイルなし（URLなしで投稿）")
-
-    post = build_post_text(content, hashtags)
 
     if dry_run:
         print(f"=== DRY RUN: {label}投稿（{post_number}本目）({len(post)}文字) ===")
         print(post)
         return
 
-    if len(post) > 140:
-        print(f"警告: {post_number}本目が140字超（{len(post)}字）。先頭140字で投稿します。")
-        post = post[:140]
+    if len(post) > 280:
+        print(f"警告: {post_number}本目が280字超（{len(post)}字）。先頭280字で投稿します。")
+        post = post[:280]
 
     import tweepy
     client = tweepy.Client(

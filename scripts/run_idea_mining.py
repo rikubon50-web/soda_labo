@@ -127,7 +127,7 @@ def build_prompt(data: dict, today: date) -> str:
     if data["meeting"]:
         content = data["meeting"]
         # 改善アクション以降を抜粋（ここが学びの宝庫）
-        start = content.find("## 5. 改善アクション")
+        start = content.find("## 改善アクション")
         excerpt = content[start:] if start != -1 else content
         lines.append("### 前日の全Agent会議まとめ（抜粋）")
         lines.append(excerpt[:3000])
@@ -188,6 +188,7 @@ def main():
         cwd=str(SODA_DIR),
         capture_output=True,
         text=True,
+        timeout=1800,
     )
 
     log_file.write_text(result.stdout + result.stderr)

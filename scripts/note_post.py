@@ -74,7 +74,7 @@ def load_ceo_score() -> int | None:
     if not score_file.exists():
         return None
     try:
-        return int(score_file.read_text().strip())
+        return int(score_file.read_text().splitlines()[0].strip())
     except ValueError:
         return None
 

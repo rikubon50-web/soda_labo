@@ -145,7 +145,7 @@ echo "[$(date)] 全工程完了" >> "$LOG_DIR/${TODAY}_run.log"
 # ─── CEOスコア低評価通知 ────────────────────────────────────
 SCORE_FILE="$SODA_DIR/logs/daily/${TODAY}_ceo_score.txt"
 if [[ -f "$SCORE_FILE" ]]; then
-  SCORE=$(cat "$SCORE_FILE" | tr -d '[:space:]')
+  SCORE=$(head -1 "$SCORE_FILE" | tr -d '[:space:]')
   if [[ -n "$SCORE" ]] && [[ "$SCORE" -lt 4 ]]; then
     notify_error "CEOスコア低評価" "3回推敲後もスコア${SCORE}（基準4以上）に達しませんでした。下書き保存済みです。手動で確認・修正・公開してください。"
   fi
