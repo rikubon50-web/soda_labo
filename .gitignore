@@ -13,3 +13,4 @@ logs/daily/
 logs/metrics/
 logs/ideas/
 *.log
+logs/tweet_ids/
