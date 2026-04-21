@@ -14,3 +14,11 @@ logs/metrics/
 logs/ideas/
 *.log
 logs/tweet_ids/
+logs/meeting/
+logs/weekly/
+
+# 生成コンテンツ（毎日追加されるため除外）
+content/
+
+# 商品アイデアバンク（量が多く変動が激しい）
+products/idea_bank.md
