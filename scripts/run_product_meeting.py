@@ -147,6 +147,16 @@ def collect_week_data() -> dict:
                 idea_entries.append(chunk[prod_start:prod_start + 400] if prod_start != -1 else chunk[:300])
     data["ideas"] = idea_entries
 
+    # 直近の週次レポート（weekly_analysisの結果を引き継ぐ）
+    weekly_files = sorted((SODA_DIR / "logs" / "weekly").glob("*.md"))
+    if weekly_files:
+        weekly = weekly_files[-1].read_text()
+        # 6項目レビューセクションだけ抽出
+        start = weekly.find("## 今週の6項目レビュー")
+        data["weekly_report"] = weekly[start:start + 2000].strip() if start != -1 else weekly[:1500]
+    else:
+        data["weekly_report"] = ""
+
     # 既存のバックログ（重複防止）
     backlog_tail = ""
     if PRODUCT_BACKLOG.exists():
@@ -169,6 +179,12 @@ def build_prompt(data: dict, today: date) -> str:
         f"集計期間: {data['week_start']} 〜 {ds}",
         "",
     ]
+
+    # 直近の週次レポート
+    if data.get("weekly_report"):
+        lines.append("### 直近の週次レポート（6項目レビュー）— 商品化判断の最優先参照")
+        lines.append(data["weekly_report"])
+        lines.append("")
 
     # 投稿分析
     if data["analyses"]:

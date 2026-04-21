@@ -2,6 +2,7 @@
 # SODAデイリーパイプライン自動実行スクリプト
 
 export PATH="/Users/rikubon50/.pyenv/shims:/Users/rikubon50/.pyenv/bin:/Users/rikubon50/.local/bin:/usr/local/bin:/usr/bin:/bin"
+ulimit -n 524288
 
 SODA_DIR="/Users/rikubon50/Desktop/SODA_LABO"
 CLAUDE="/Users/rikubon50/.local/bin/claude"
@@ -22,8 +23,21 @@ notify_error() {
 
 PROMPT="SODAの本日（${TODAY}）のコンテンツパイプラインを全工程実行する。
 
+## 事前読み込み（Step 1より前に必ず実行）
+以下のファイルをRead toolで読み込み、内容を把握した上で各Stepに反映すること。
+
+1. logs/meeting/${TODAY}_meeting.md — 今日の朝会議の決定事項（採用テーマ・Writerへの指示・改善アクション）
+2. logs/daily/$(date -v-1d +%Y-%m-%d 2>/dev/null || date --date='yesterday' +%Y-%m-%d)_post_analysis.md — 昨日の投稿分析（何が反応されたか・改善示唆）
+3. logs/ideas/$(date -v-1d +%Y-%m-%d 2>/dev/null || date --date='yesterday' +%Y-%m-%d)_ideas.md — 昨日のアイデア資産（活用できる素材・切り口）
+4. audience/personas.md — 読者像（PlannerとWriterは企画・文章設計時に必ず参照）
+5. audience/pain_points.md — 読者のペインポイント（企画の切り口に使う）
+6. audience/winning_topics.md — 反応が取れた確定テーマ（あれば優先的に参考にする）
+
+ファイルが存在しない場合はスキップしてよい。
+
 ## Step 1: CEO — 本日の優先テーマ決定
 agents/ceo.md を読み、CEOとして本日の優先テーマを決定する。
+**朝会議ログ（logs/meeting/${TODAY}_meeting.md）のCEO最終判断・Writerへの指示を最優先で参照すること。**
 content/note/ の直近ファイルを確認してDay Nシリーズの継続判断を行う。
 出力形式: agents/ceo.md の「優先テーマを出すとき」フォーマット。
 
@@ -37,6 +51,9 @@ agents/ceo.md の5基準でPlannerの企画案を評価し、採用・保留・�
 
 ## Step 4: Writer — 下書き制作
 agents/writer.md を読み、採用企画をもとに以下を下書きしてファイルに保存する。
+**昨日の投稿分析（post_analysis）で反応が高かった表現・フック・構成を参考にすること。**
+**アイデア資産（ideas）に使えるネタ・切り口があれば積極的に取り込むこと。**
+**朝会議ログのWriterへの指示がある場合は必ず従うこと。**
 - note記事 → content/note/${TODAY}_[タイトル略称].md
   （Day Nシリーズなら content/drafts/template_day-n_note.md を参照）
   note記事の末尾に agents/writer.md の「note記事ハッシュタグルール」に従い #タグ を5つ付与する。
@@ -48,12 +65,22 @@ agents/writer.md を読み、採用企画をもとに以下を下書きしてフ
 
 ## Step 5: Editor — 仕上げ
 agents/editor.md を読み、Step4で保存した3ファイルを磨いて上書き保存する。
+**必ず以下の編集メモを出力すること（省略禁止）：**
+```
+【編集メモ】
+- チェックリスト実施: トーン確認 ✅/❌ | 構成確認 ✅/❌ | 文章確認 ✅/❌
+- 変更点: （変更した内容を箇条書き。変更なしの場合も「変更なし」と明記）
+- 残課題: （直しきれなかった点があれば記載。なければ「なし」）
+```
 
 ## Step 6: CEO — 最終公開判断（推敲ループ）
 agents/ceo.md の「最終公開判断を出すとき」フォーマットで5段階スコアを出す。
 スコアが3以下の場合はEditorにStep5をやり直させ、再度CEOが採点する。
 これをスコアが4以上になるまで繰り返す。ただし最大3回のやり直しで打ち切る（無限ループ防止）。
-スコアが確定したら、その数字（1〜5の整数のみ）を logs/daily/${TODAY}_ceo_score.txt に1行で保存する。
+スコアが確定したら、以下の形式で logs/daily/${TODAY}_ceo_score.txt に保存する（1行目がスコア数字のみ）：
+スコア数字（1行目）
+判断理由（2行目以降、2〜3文）
+低スコアの主因（スコア3以下の場合のみ。何が足りなかったか1文）
 
 ## Step 7: Secretary — 日次ログ記録
 agents/secretary.md のログ形式に従い logs/daily/${TODAY}.md を作成して保存する。
@@ -74,6 +101,8 @@ echo "[$(date)] Claude パイプライン完了（exit: $CLAUDE_EXIT）" >> "$LO
 
 if [[ $CLAUDE_EXIT -ne 0 ]]; then
   notify_error "Claudeパイプライン（Step1-7）" "Claudeの実行が失敗しました（exit: $CLAUDE_EXIT）"
+  echo "[$(date)] Claudeパイプライン失敗のためStep8以降をスキップ" >> "$LOG_DIR/${TODAY}_run.log"
+  exit 1
 fi
 
 # ─── Step 8: X朝投稿（1本目）────────────────────────────────

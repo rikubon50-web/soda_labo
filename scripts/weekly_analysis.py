@@ -199,6 +199,11 @@ def build_prompt(data: dict) -> str:
     sections.append(
         f"agents/analyst.md を Read toolで読み、Analystとして週次レポートを作成し "
         f"logs/weekly/{today}.md に Write toolで保存する。\n\n"
+        f"レポート保存後、以下を必ず実行すること：\n"
+        f"audience/winning_topics.md を Read toolで読み、"
+        f"「### 1. 今週一番伸びたテーマ」で選んだテーマを以下の形式で「## 暫定候補」セクションに Edit toolで追記する。\n"
+        f"追記形式: '- [{today}] [テーマ名] — [なぜ伸びたか仮説1文]'\n"
+        f"同じテーマが既に3回以上記載されていれば「## 確定勝ちパターン」に移動して太字にする。\n\n"
         "週次レポートは通常の分析に加え、以下の6項目を必ず独立したセクションとして含めること。"
         "各項目は「検討する」「考える」で終わらせず、具体的な内容まで書くこと。\n\n"
         "---\n\n"
@@ -249,7 +254,7 @@ def main():
             CLAUDE, "-p",
             "--dangerously-skip-permissions",
             "--model", "claude-opus-4-7",
-            "--allowedTools", "Read,Write,Glob",
+            "--allowedTools", "Read,Write,Edit,Glob",
         ],
         input=prompt,
         cwd=str(SODA_DIR),

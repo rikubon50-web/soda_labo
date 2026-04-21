@@ -25,7 +25,7 @@ MEMO_PROMPT = """\
 
 ## ルール
 
-- 今日のデータから「最も反応のあった悩み」を1つ特定する
+- 昨日の投稿データ（今日08:45に完了した分析）から「最も反応のあった悩み」を1つ特定する
 - その悩みを解決する商品を1つだけ考える
 - 有料noteかPDFで¥1,000以下で売れるスケールで考える
 - 気合で作るものではなく「今日の反応の延長線上にあるもの」を選ぶ
@@ -98,7 +98,7 @@ def build_prompt(data: dict, today: date) -> str:
     ]
 
     if data["analysis"]:
-        lines.append("### 投稿分析（反応データ）")
+        lines.append("### 昨日の投稿分析（反応データ）※昨日の投稿に対する分析結果")
         lines.append(data["analysis"])
         lines.append("")
 

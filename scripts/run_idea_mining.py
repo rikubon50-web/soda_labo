@@ -88,21 +88,26 @@ MINING_PROMPT = """\
 """
 
 
-def collect_yesterday_data() -> dict:
-    yesterday = date.today() - timedelta(days=1)
-    ds = str(yesterday)
-    data: dict = {"date": ds}
+def collect_data() -> dict:
+    today = date.today()
+    yesterday = today - timedelta(days=1)
+    ds_today = str(today)
+    ds_yesterday = str(yesterday)
+    data: dict = {"date": ds_today}
 
-    # 会議まとめ（最重要ソース）
-    meeting_file = SODA_DIR / "logs" / "meeting" / f"{ds}_meeting.md"
+    # 今日の会議まとめ（09:00時点では07:30の会議が完了している）
+    meeting_file = SODA_DIR / "logs" / "meeting" / f"{ds_today}_meeting.md"
+    # フォールバック: 今日の会議ログがなければ前日分を使う
+    if not meeting_file.exists():
+        meeting_file = SODA_DIR / "logs" / "meeting" / f"{ds_yesterday}_meeting.md"
     data["meeting"] = meeting_file.read_text() if meeting_file.exists() else ""
 
-    # 投稿分析（補助）
-    analysis_file = SODA_DIR / "logs" / "daily" / f"{ds}_post_analysis.md"
+    # 昨日の投稿分析（補助）
+    analysis_file = SODA_DIR / "logs" / "daily" / f"{ds_yesterday}_post_analysis.md"
     data["analysis"] = analysis_file.read_text() if analysis_file.exists() else ""
 
     # Secretary日次ログ（補助）
-    daily_log = SODA_DIR / "logs" / "daily" / f"{ds}.md"
+    daily_log = SODA_DIR / "logs" / "daily" / f"{ds_yesterday}.md"
     data["daily_log"] = daily_log.read_text() if daily_log.exists() else ""
 
     return data
@@ -162,7 +167,7 @@ def main():
     args = parser.parse_args()
 
     today = date.today()
-    data = collect_yesterday_data()
+    data = collect_data()
     prompt = build_prompt(data, today)
 
     if args.dry_run:

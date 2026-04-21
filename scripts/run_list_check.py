@@ -7,16 +7,12 @@
   python3 scripts/run_list_check.py --dry-run  # プロンプトだけ表示
 """
 
-import os
 import re
 import argparse
-import subprocess
 from pathlib import Path
 from datetime import date
 
 SODA_DIR = Path(__file__).parent.parent
-CLAUDE = os.path.expanduser("~/.local/bin/claude")
-PYTHON = "/Users/rikubon50/.pyenv/shims/python3"
 
 FUNNEL_STATUS = SODA_DIR / "docs" / "funnel_status.md"
 
@@ -129,59 +125,109 @@ def build_prompt(today: date) -> str:
     return "\n".join(lines)
 
 
+ACTIONS = {
+    "Xプロフィール導線":   "docs/x_profile_copy.md を参照してXプロフィールにフォームURLを設置する（5分）",
+    "X固定ポスト導線":     "固定ポスト用テキストを投稿してプロフィールに固定する（5分）",
+    "note末尾登録導線":    "今日のnote記事末尾にCTAテンプレ（agents/writer.md参照）を追加する（5分）",
+    "無料プレゼント受け皿": "docs/google_form_setup.md を参照してフォームを作成する（30分）",
+}
+
+
+def check_funnel_status(item_keyword: str) -> str:
+    """funnel_status.md から該当項目のステータスを読み取る"""
+    if not FUNNEL_STATUS.exists():
+        return "❌"
+    text = FUNNEL_STATUS.read_text()
+    idx = text.find(item_keyword)
+    if idx == -1:
+        return "❌"
+    snippet = text[idx:idx + 200]
+    if "✅" in snippet:
+        return "✅"
+    if "🔧" in snippet:
+        return "⚠️"
+    return "❌"
+
+
+def determine_phase(count: int) -> str:
+    if count <= 1:
+        return "リスト構築前"
+    if count <= 3:
+        return "リスト構築中"
+    return "リスト活用可能"
+
+
 def main():
     parser = argparse.ArgumentParser(description="SODAリスト導線確認スクリプト")
-    parser.add_argument("--dry-run", action="store_true", help="プロンプトだけ表示")
+    parser.add_argument("--dry-run", action="store_true", help="結果を表示するだけ")
     args = parser.parse_args()
 
     today = date.today()
-    prompt = build_prompt(today)
+    ds = str(today)
 
-    if args.dry_run:
-        note_status, note_detail = check_note_cta(today)
-        seeds = count_product_seeds()
-        print(f"[事前チェック] note末尾CTA: {note_status}（{note_detail}）")
-        print(f"[事前チェック] 商品タネ数: {seeds} 件")
-        print()
-        print("=== PROMPT ===")
-        print(prompt)
-        return
+    # 4項目を判定
+    items = {
+        "Xプロフィール導線":   check_funnel_status("Xプロフィールに導線"),
+        "X固定ポスト導線":     check_funnel_status("X固定ポストに導線"),
+        "note末尾登録導線":    check_note_cta(today)[0],
+        "無料プレゼント受け皿": check_funnel_status("無料プレゼントの受け皿"),
+    }
+    note_detail = check_note_cta(today)[1]
+    seed_count = count_product_seeds()
+    ok_count = sum(1 for v in items.values() if v == "✅")
+    phase = determine_phase(ok_count)
 
-    log_file = SODA_DIR / "logs" / "cron" / f"{today}_list_check.log"
-    print(f"[{today}] リスト導線確認を開始...")
+    # 最優先アクション（❌ → ⚠️ → ✅ の順で最初の未完了）
+    priority_item = next((k for k, v in items.items() if v == "❌"), None) or \
+                    next((k for k, v in items.items() if v == "⚠️"), None)
+    priority_action = ACTIONS.get(priority_item, "すべて設定済みです") if priority_item else "すべて設定済みです"
 
-    result = subprocess.run(
-        [
-            CLAUDE, "-p",
-            "--dangerously-skip-permissions",
-            "--allowedTools", "Read,Write,Edit,Glob",
-        ],
-        input=prompt,
-        cwd=str(SODA_DIR),
-        capture_output=True,
-        text=True,
+    # レポート生成
+    rows = "\n".join(
+        f"| {k} | {v} | {'登録キーワード＋URL確認' if k == 'note末尾登録導線' else v} |"
+        for k, v in items.items()
+    )
+    # note行だけ詳細を入れる
+    rows = "\n".join(
+        f"| {k} | {v} | {note_detail if k == 'note末尾登録導線' else ('設定済み' if v == '✅' else ('準備中' if v == '⚠️' else '未設定'))} |"
+        for k, v in items.items()
     )
 
-    log_file.write_text(result.stdout + result.stderr)
+    report = f"""# リスト導線チェック — {ds}
 
-    if result.returncode != 0:
-        subprocess.run(
-            [
-                PYTHON, str(SODA_DIR / "scripts" / "notify_error.py"),
-                "リスト導線確認", f"run_list_check.py が失敗しました（exit: {result.returncode}）",
-            ],
-            cwd=str(SODA_DIR),
-        )
-        print(f"エラー: {result.stderr[-300:]}")
+| 項目 | 状態 | 詳細 |
+|------|------|------|
+{rows}
+
+## 総合評価
+**整備率**: {ok_count} / 4 項目
+**フェーズ**: {phase}
+**商品タネ数**: {seed_count} 件
+
+## 今日やること（最優先1つだけ）
+**タスク**: {priority_action}
+"""
+
+    if args.dry_run:
+        print(report)
         return
 
-    check_file = SODA_DIR / "logs" / "daily" / f"{today}_list_check.md"
-    if check_file.exists():
-        print(f"導線チェック保存完了: {check_file}")
-        print(check_file.read_text())
-    else:
-        print("警告: チェックファイルが作成されませんでした")
-        print(result.stdout[-500:])
+    log_file = SODA_DIR / "logs" / "cron" / f"{ds}_list_check.log"
+    check_file = SODA_DIR / "logs" / "daily" / f"{ds}_list_check.md"
+
+    check_file.write_text(report)
+    log_file.write_text(f"[{today}] 導線チェック完了: {ok_count}/4項目\n{report}")
+
+    # funnel_status.md の更新ログに追記
+    if FUNNEL_STATUS.exists():
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y-%m-%d")
+        FUNNEL_STATUS.write_text(
+            FUNNEL_STATUS.read_text() + f"| {timestamp} | 自動チェック: {ok_count}/4項目 |\n"
+        )
+
+    print(f"導線チェック完了: {ok_count}/4項目")
+    print(report)
 
 
 if __name__ == "__main__":

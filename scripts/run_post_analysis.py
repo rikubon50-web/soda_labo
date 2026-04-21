@@ -175,7 +175,7 @@ def main():
         [
             CLAUDE, "-p",
             "--dangerously-skip-permissions",
-            "--allowedTools", "Write",
+            "--allowedTools", "Read,Write,Glob",
         ],
         input=prompt,
         cwd=str(SODA_DIR),

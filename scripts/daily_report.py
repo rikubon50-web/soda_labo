@@ -96,7 +96,10 @@ def collect_today_decisions(today: date) -> dict:
     meeting_file = SODA_DIR / "logs" / "meeting" / f"{ds}_meeting.md"
     if meeting_file.exists():
         t = meeting_file.read_text()
-        decisions["meeting"] = extract_section(t, "## 改善アクション")
+        summary = extract_section(t, "## 会議要約")
+        actions = extract_section(t, "## 改善アクション")
+        decisions["meeting_summary"] = summary
+        decisions["meeting"] = actions
 
     # 商品メモ
     memo_file = SODA_DIR / "logs" / "daily" / f"{ds}_product_memo.md"
@@ -171,6 +174,9 @@ def build_email_body(today: date) -> tuple[str, str]:
             f"  python3 scripts/<スクリプト名>.py",
             "",
         ]
+
+    if decisions.get("meeting_summary"):
+        lines += ["■ 朝会議サマリー", decisions["meeting_summary"][:600], ""]
 
     if decisions.get("cta"):
         lines += ["■ 今日のCTA決定", decisions["cta"], ""]
