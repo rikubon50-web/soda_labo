@@ -250,8 +250,8 @@ def main():
             "--dangerously-skip-permissions",
             "--model", "claude-opus-4-7",
             "--allowedTools", "Read,Write,Glob",
-            prompt,
         ],
+        input=prompt,
         cwd=str(SODA_DIR),
         capture_output=True,
         text=True,
@@ -264,10 +264,19 @@ def main():
         if weekly_file.exists():
             print(f"週次レポート保存完了: {weekly_file}")
         else:
-            print("警告: レポートファイルが作成されませんでした")
-            print(result.stdout[-500:])
+            msg = "週次レポートファイルが作成されませんでした"
+            print(f"警告: {msg}")
+            subprocess.run(
+                ["python3", str(SODA_DIR / "scripts" / "notify_error.py"), "週次分析", msg],
+                cwd=str(SODA_DIR),
+            )
     else:
-        print(f"エラー: {result.stderr[-300:]}")
+        msg = result.stderr[-300:]
+        print(f"エラー: {msg}")
+        subprocess.run(
+            ["python3", str(SODA_DIR / "scripts" / "notify_error.py"), "週次分析", msg],
+            cwd=str(SODA_DIR),
+        )
 
 
 if __name__ == "__main__":
