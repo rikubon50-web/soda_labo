@@ -6,3 +6,10 @@ __pycache__/
 .DS_Store
 
 .browser_profile/
+
+# runtime logs
+logs/cron/
+logs/daily/
+logs/metrics/
+logs/ideas/
+*.log
