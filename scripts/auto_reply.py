@@ -21,7 +21,7 @@ SODA_DIR = Path(__file__).parent.parent
 load_dotenv(SODA_DIR / ".env")
 
 CLAUDE = os.path.expanduser("~/.local/bin/claude")
-PYTHON = "/Users/rikubon50/.pyenv/shims/python3"
+PYTHON = os.environ.get("PYTHON_PATH", "/Users/rikubon50/.pyenv/shims/python3")
 
 def load_keywords() -> list[str]:
     kw_file = SODA_DIR / "config" / "reply_keywords.json"

@@ -8,6 +8,7 @@
 """
 
 import os
+from dotenv import load_dotenv
 import json
 import argparse
 import subprocess
@@ -15,8 +16,9 @@ from pathlib import Path
 from datetime import date, timedelta
 
 SODA_DIR = Path(__file__).parent.parent
+load_dotenv(SODA_DIR / ".env")
 CLAUDE = os.path.expanduser("~/.local/bin/claude")
-PYTHON = "/Users/rikubon50/.pyenv/shims/python3"
+PYTHON = os.environ.get("PYTHON_PATH", "/Users/rikubon50/.pyenv/shims/python3")
 
 PROMPT_TEMPLATE = """\
 あなたはSODAのAnalystとCEOです。

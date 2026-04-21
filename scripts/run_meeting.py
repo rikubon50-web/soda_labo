@@ -226,6 +226,8 @@ def collect_yesterday_data() -> dict:
     data["personas"] = personas_file.read_text()[:600] if personas_file.exists() else ""
     winning_file = SODA_DIR / "audience" / "winning_topics.md"
     data["winning_topics"] = winning_file.read_text()[:400] if winning_file.exists() else ""
+    objections_file = SODA_DIR / "audience" / "objections.md"
+    data["objections"] = objections_file.read_text()[:400] if objections_file.exists() else ""
 
     return data
 
@@ -304,6 +306,9 @@ def build_prompt(data: dict, today: date) -> str:
     if data.get("winning_topics"):
         lines.append("\n### 勝ちトピック（反応が取れた確定テーマ）")
         lines.append(data["winning_topics"])
+    if data.get("objections"):
+        lines.append("\n### 読者の反論・離脱理由（Growth参照：CTA設計・導線設計に使う）")
+        lines.append(data["objections"])
 
     lines.append("\n---")
     lines.append(MEETING_FORMAT.replace("{DATE}", str(today)))

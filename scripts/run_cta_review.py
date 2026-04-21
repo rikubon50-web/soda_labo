@@ -8,14 +8,16 @@ CTA改善スクリプト（毎日18:00）
 """
 
 import os
+from dotenv import load_dotenv
 import argparse
 import subprocess
 from pathlib import Path
 from datetime import date
 
 SODA_DIR = Path(__file__).parent.parent
+load_dotenv(SODA_DIR / ".env")
 CLAUDE = os.path.expanduser("~/.local/bin/claude")
-PYTHON = "/Users/rikubon50/.pyenv/shims/python3"
+PYTHON = os.environ.get("PYTHON_PATH", "/Users/rikubon50/.pyenv/shims/python3")
 
 CTA_PROMPT = """\
 あなたはSODAのCTA設計担当です。
@@ -91,8 +93,18 @@ def build_prompt(today: date) -> str:
     ds = str(today)
     x_file = find_today_x_file()
 
+    growth_md = SODA_DIR / "agents" / "growth.md"
+    growth_section = ""
+    if growth_md.exists():
+        growth_section = f"\n\n---\n## Growth設計原則（必ず参照すること）\n{growth_md.read_text()[:800]}"
+
+    objections_md = SODA_DIR / "audience" / "objections.md"
+    objections_section = ""
+    if objections_md.exists():
+        objections_section = f"\n\n## 読者の反論・離脱理由\n{objections_md.read_text()[:400]}"
+
     lines = [
-        CTA_PROMPT.replace("{DATE}", ds),
+        CTA_PROMPT.replace("{DATE}", ds) + growth_section + objections_section,
         "",
         "---",
         f"## 本日（{ds}）のファイル情報",
