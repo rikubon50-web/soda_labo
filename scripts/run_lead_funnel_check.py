@@ -7,17 +7,11 @@
   python3 scripts/run_lead_funnel_check.py --dry-run  # プロンプトだけ表示
 """
 
-import os
-from dotenv import load_dotenv
 import argparse
-import subprocess
-from pathlib import Path
 from datetime import date, timedelta
+from pathlib import Path
 
-SODA_DIR = Path(__file__).parent.parent
-load_dotenv(SODA_DIR / ".env")
-CLAUDE = os.path.expanduser("~/.local/bin/claude")
-PYTHON = os.environ.get("PYTHON_PATH", "/Users/rikubon50/.pyenv/shims/python3")
+from soda_utils import SODA_DIR, run_claude, notify_error
 
 FUNNEL_PROMPT = """\
 あなたはSODAのリード獲得戦略担当です。
@@ -199,29 +193,12 @@ def main():
     log_file = SODA_DIR / "logs" / "cron" / f"{today}_lead_funnel.log"
     print(f"[{today}] リード獲得導線チェックを開始...")
 
-    result = subprocess.run(
-        [
-            CLAUDE, "-p",
-            "--dangerously-skip-permissions",
-            "--allowedTools", "Read,Write,Edit,Glob",
-        ],
-        input=prompt,
-        cwd=str(SODA_DIR),
-        capture_output=True,
-        text=True,
-        timeout=1800,
-    )
+    result = run_claude(prompt)
 
     log_file.write_text(result.stdout + result.stderr)
 
     if result.returncode != 0:
-        subprocess.run(
-            [
-                PYTHON, str(SODA_DIR / "scripts" / "notify_error.py"),
-                "リード獲得導線チェック", f"run_lead_funnel_check.py が失敗しました（exit: {result.returncode}）",
-            ],
-            cwd=str(SODA_DIR),
-        )
+        notify_error("リード獲得導線チェック", f"run_lead_funnel_check.py が失敗しました（exit: {result.returncode}）")
         print(f"エラー: {result.stderr[-300:]}")
         return
 

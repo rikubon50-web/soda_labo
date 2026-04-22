@@ -2,20 +2,19 @@
 """
 SODA 全Agent会議スクリプト
 毎朝7:30に自動実行。前日の結果を基に全Agent会議を進行し、ログに保存する。
+会議後にコンテンツモードファイルを書き込み、パイプラインへ今日の方針を伝える。
 使い方:
   python3 scripts/run_meeting.py          # 本日の会議を実行
   python3 scripts/run_meeting.py --dry-run  # プロンプトだけ表示
 """
 
-import os
-import json
 import argparse
-import subprocess
-from pathlib import Path
+import json
 from datetime import date, timedelta
+from pathlib import Path
 
-SODA_DIR = Path(__file__).parent.parent
-CLAUDE = os.path.expanduser("~/.local/bin/claude")
+from soda_utils import SODA_DIR, run_claude, notify_error, write_content_mode
+from shows import get_scheduled_shows, get_show
 
 MEETING_FORMAT = """
 # 会議の目的
@@ -168,11 +167,9 @@ def collect_yesterday_data() -> dict:
     ds = str(yesterday)
     data: dict = {"date": ds}
 
-    # Secretary日次ログ
     daily_log = SODA_DIR / "logs" / "daily" / f"{ds}.md"
     data["daily_log"] = daily_log.read_text() if daily_log.exists() else ""
 
-    # CEOスコア（1行目がスコア数字、2行目以降が判断理由）
     score_file = SODA_DIR / "logs" / "daily" / f"{ds}_ceo_score.txt"
     if score_file.exists():
         score_text = score_file.read_text().strip()
@@ -183,27 +180,21 @@ def collect_yesterday_data() -> dict:
         data["ceo_score"] = ""
         data["ceo_score_reason"] = ""
 
-    # note公開URL
     note_url_file = SODA_DIR / "logs" / "daily" / f"{ds}_note_url.txt"
     data["note_url"] = note_url_file.read_text().strip() if note_url_file.exists() else ""
 
-    # Xメトリクス
     metrics_file = SODA_DIR / "logs" / "metrics" / f"{ds}.json"
     data["metrics"] = json.loads(metrics_file.read_text()) if metrics_file.exists() else []
 
-    # note記事
     note_files = sorted((SODA_DIR / "content" / "note").glob(f"{ds}_*.md"))
     data["note_content"] = note_files[0].read_text()[:600] if note_files else ""
 
-    # X投稿
     x_files = sorted((SODA_DIR / "content" / "x_posts").glob(f"{ds}_*.md"))
     data["x_content"] = x_files[0].read_text() if x_files else ""
 
-    # cronパイプラインログ（直近4000字）
     run_log = SODA_DIR / "logs" / "cron" / f"{ds}_run.log"
     data["run_log"] = run_log.read_text()[-4000:] if run_log.exists() else ""
 
-    # 直前の会議ログ（改善アクションセクションのみ抽出）
     meeting_files = sorted((SODA_DIR / "logs" / "meeting").glob("*_meeting.md"))
     if meeting_files:
         full = meeting_files[-1].read_text()
@@ -212,7 +203,6 @@ def collect_yesterday_data() -> dict:
     else:
         data["last_meeting_actions"] = ""
 
-    # 直近3日のアイデアログ（Planner用）
     idea_texts = []
     for i in range(1, 4):
         idea_ds = str(date.today() - timedelta(days=i))
@@ -221,7 +211,6 @@ def collect_yesterday_data() -> dict:
             idea_texts.append(f"--- {idea_ds} ---\n{idea_file.read_text()[:800]}")
     data["recent_ideas"] = "\n\n".join(idea_texts)
 
-    # 読者データ（personas / winning_topics）
     personas_file = SODA_DIR / "audience" / "personas.md"
     data["personas"] = personas_file.read_text()[:600] if personas_file.exists() else ""
     winning_file = SODA_DIR / "audience" / "winning_topics.md"
@@ -234,8 +223,10 @@ def collect_yesterday_data() -> dict:
 
 def build_prompt(data: dict, today: date) -> str:
     ds = data["date"]
+    day_jp = ["月", "火", "水", "木", "金", "土", "日"][today.weekday()]
+
     lines = [
-        f"今日は{today}（JST）。以下の前日（{ds}）データを踏まえてSODA全Agent会議を実行せよ。",
+        f"今日は{today}（JST、{day_jp}曜日）。以下の前日（{ds}）データを踏まえてSODA全Agent会議を実行せよ。",
         "",
         "## 実行手順",
         "1. agents/ceo.md、agents/secretary.md、agents/planner.md、"
@@ -247,17 +238,14 @@ def build_prompt(data: dict, today: date) -> str:
         "",
     ]
 
-    # CEOスコア
     score = data.get("ceo_score") or "未取得"
     lines.append(f"### CEOスコア（公開判断）\n{score} / 5")
     if data.get("ceo_score_reason"):
         lines.append(f"判断理由: {data['ceo_score_reason']}")
 
-    # note URL
     if data.get("note_url"):
         lines.append(f"\n### note公開URL\n{data['note_url']}")
 
-    # Xメトリクス
     lines.append("\n### Xメトリクス")
     if data["metrics"]:
         for m in data["metrics"]:
@@ -272,34 +260,27 @@ def build_prompt(data: dict, today: date) -> str:
     else:
         lines.append("（未取得 — 投稿内容から定性評価すること）")
 
-    # Secretary日次ログ
     lines.append("\n### Secretary日次ログ")
     lines.append(data["daily_log"] if data["daily_log"] else "（なし）")
 
-    # note記事抜粋
     lines.append("\n### note記事（先頭600字）")
     lines.append(data["note_content"] if data["note_content"] else "（なし）")
 
-    # X投稿
     lines.append("\n### X投稿内容")
     lines.append(data["x_content"] if data["x_content"] else "（なし）")
 
-    # パイプラインログ
     if data["run_log"]:
         lines.append("\n### 自動実行ログ（直近4000字）")
         lines.append(f"```\n{data['run_log']}\n```")
 
-    # 直前の会議の改善アクション
     if data.get("last_meeting_actions"):
         lines.append("\n### 前回会議の改善アクション（Writerは夜投稿CTA設計時に必ず確認すること）")
         lines.append(data["last_meeting_actions"])
 
-    # 直近3日のアイデアログ（Planner用）
     if data.get("recent_ideas"):
         lines.append("\n### 直近3日のアイデア資産（Plannerは企画案作成時に必ず参照すること）")
         lines.append(data["recent_ideas"])
 
-    # 読者データ
     if data.get("personas"):
         lines.append("\n### 読者ペルソナ（PlannerとWriterは必ず参照すること）")
         lines.append(data["personas"])
@@ -313,10 +294,30 @@ def build_prompt(data: dict, today: date) -> str:
     lines.append("\n---")
     lines.append(MEETING_FORMAT.replace("{DATE}", str(today)))
 
+    # 今日が配信日のショーの会議指示を動的に追加
+    for show_id in get_scheduled_shows(today.weekday()):
+        show = get_show(show_id)
+        if hasattr(show, "MEETING_INSTRUCTIONS"):
+            lines.append(show.MEETING_INSTRUCTIONS)
+
     return "\n".join(lines)
 
 
-def main():
+def _write_mode_from_meeting(meeting_file: Path, today: date) -> None:
+    """会議ログを解析してコンテンツモードファイルを書き込む。"""
+    content = meeting_file.read_text()
+    for show_id in get_scheduled_shows(today.weekday()):
+        show = get_show(show_id)
+        if hasattr(show, "parse_meeting_decision"):
+            decision = show.parse_meeting_decision(content)
+            if decision:
+                write_content_mode(show_id, **decision)
+                print(f"コンテンツモード: {show_id} / {decision}")
+                return
+    write_content_mode("normal")
+
+
+def main() -> None:
     parser = argparse.ArgumentParser(description="SODA全Agent会議スクリプト")
     parser.add_argument("--dry-run", action="store_true", help="プロンプトだけ表示")
     args = parser.parse_args()
@@ -332,43 +333,25 @@ def main():
 
     meeting_dir = SODA_DIR / "logs" / "meeting"
     meeting_dir.mkdir(parents=True, exist_ok=True)
-
     log_file = SODA_DIR / "logs" / "cron" / f"{today}_meeting.log"
 
     print(f"[{today}] SODA全Agent会議を開始...")
 
-    result = subprocess.run(
-        [
-            CLAUDE, "-p",
-            "--dangerously-skip-permissions",
-            "--allowedTools", "Read,Write,Glob,Grep",
-        ],
-        input=prompt,
-        cwd=str(SODA_DIR),
-        capture_output=True,
-        text=True,
-        timeout=1800,
-    )
-
+    result = run_claude(prompt, tools=["Read", "Write", "Edit", "Glob", "Grep"])
     log_file.write_text(result.stdout + result.stderr)
 
     if result.returncode != 0:
-        # エラー通知
-        subprocess.run(
-            [
-                "python3", str(SODA_DIR / "scripts" / "notify_error.py"),
-                "全Agent会議", f"run_meeting.py が失敗しました（exit: {result.returncode}）",
-            ],
-            cwd=str(SODA_DIR),
-        )
+        notify_error("全Agent会議", f"run_meeting.py が失敗しました（exit: {result.returncode}）")
         print(f"エラー: {result.stderr[-300:]}")
         return
 
     meeting_file = meeting_dir / f"{today}_meeting.md"
     if meeting_file.exists():
         print(f"会議まとめ保存完了: {meeting_file}")
+        _write_mode_from_meeting(meeting_file, today)
     else:
         print("警告: 会議ファイルが作成されませんでした")
+        write_content_mode("normal")
         print(result.stdout[-500:])
 
 

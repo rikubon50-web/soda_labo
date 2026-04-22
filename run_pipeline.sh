@@ -90,19 +90,53 @@ agents/secretary.md のログ形式に従い logs/daily/${TODAY}.md を作成し
 - ユーザーへの確認は不要。CEOがすべての判断を行う
 - ファイル保存はWrite/Editツールを使って実際に書き込む"
 
-# ─── Claudeパイプライン（Step 1-7）───────────────────────────
-echo "$PROMPT" | "$CLAUDE" -p \
-  --dangerously-skip-permissions \
-  --allowedTools "Read,Write,Edit,Glob,Grep,Bash" \
-  >> "$LOG_DIR/${TODAY}_run.log" 2>&1
-CLAUDE_EXIT=$?
+# ─── コンテンツモード判定 & ショー生成 ──────────────────────────
+MODE_FILE="$SODA_DIR/logs/daily/${TODAY}_content_mode.json"
+SHOW_MODE=$(python3 -c "
+import json, sys
+try:
+    d = json.load(open('$MODE_FILE'))
+    print(d.get('mode', 'normal'))
+except Exception:
+    print('normal')
+" 2>/dev/null)
+SHOW_THEME=$(python3 -c "
+import json, sys
+try:
+    d = json.load(open('$MODE_FILE'))
+    print(d.get('theme', ''))
+except Exception:
+    print('')
+" 2>/dev/null)
 
-echo "[$(date)] Claude パイプライン完了（exit: $CLAUDE_EXIT）" >> "$LOG_DIR/${TODAY}_run.log"
+if [[ "$SHOW_MODE" != "normal" && -n "$SHOW_MODE" && -n "$SHOW_THEME" ]]; then
+  echo "[$(date)] ショーモード検出: $SHOW_MODE / テーマ: $SHOW_THEME" >> "$LOG_DIR/${TODAY}_run.log"
+  python3 "$SODA_DIR/scripts/run_show_gen.py" --show "$SHOW_MODE" --theme "$SHOW_THEME" \
+    >> "$LOG_DIR/${TODAY}_run.log" 2>&1
+  SHOW_EXIT=$?
+  if [[ $SHOW_EXIT -ne 0 ]]; then
+    notify_error "ショーコンテンツ生成($SHOW_MODE)" "run_show_gen.py が失敗しました（theme: $SHOW_THEME）"
+  fi
+fi
 
-if [[ $CLAUDE_EXIT -ne 0 ]]; then
-  notify_error "Claudeパイプライン（Step1-7）" "Claudeの実行が失敗しました（exit: $CLAUDE_EXIT）"
-  echo "[$(date)] Claudeパイプライン失敗のためStep8以降をスキップ" >> "$LOG_DIR/${TODAY}_run.log"
-  exit 1
+# ─── コンテンツ生成スキップ判定（ショーが先に生成した場合）────────
+if ls "$SODA_DIR/content/x_posts/${TODAY}"_*.md 2>/dev/null | head -1 | grep -q .; then
+  echo "[$(date)] X投稿ファイルが既に存在します（ショー生成済み）。Claudeパイプラインをスキップします。" >> "$LOG_DIR/${TODAY}_run.log"
+else
+  # ─── Claudeパイプライン（Step 1-7）───────────────────────────
+  echo "$PROMPT" | "$CLAUDE" -p \
+    --dangerously-skip-permissions \
+    --allowedTools "Read,Write,Edit,Glob,Grep,Bash" \
+    >> "$LOG_DIR/${TODAY}_run.log" 2>&1
+  CLAUDE_EXIT=$?
+
+  echo "[$(date)] Claude パイプライン完了（exit: $CLAUDE_EXIT）" >> "$LOG_DIR/${TODAY}_run.log"
+
+  if [[ $CLAUDE_EXIT -ne 0 ]]; then
+    notify_error "Claudeパイプライン（Step1-7）" "Claudeの実行が失敗しました（exit: $CLAUDE_EXIT）"
+    echo "[$(date)] Claudeパイプライン失敗のためStep8以降をスキップ" >> "$LOG_DIR/${TODAY}_run.log"
+    exit 1
+  fi
 fi
 
 # ─── Step 8: X朝投稿（1本目）────────────────────────────────

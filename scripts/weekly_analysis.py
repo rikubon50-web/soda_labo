@@ -6,15 +6,12 @@
   python3 scripts/weekly_analysis.py --dry-run  # プロンプトだけ表示
 """
 
-import os
-import json
 import argparse
-import subprocess
-from pathlib import Path
+import json
 from datetime import date, timedelta
+from pathlib import Path
 
-SODA_DIR = Path(__file__).parent.parent
-CLAUDE = os.path.expanduser("~/.local/bin/claude")
+from soda_utils import SODA_DIR, run_claude, notify_error
 
 
 def collect_week_data(days: int = 7) -> dict:
@@ -248,19 +245,7 @@ def main():
 
     print(f"Opus で週次分析を開始...")
 
-    result = subprocess.run(
-        [
-            CLAUDE, "-p",
-            "--dangerously-skip-permissions",
-            "--model", "claude-opus-4-7",
-            "--allowedTools", "Read,Write,Edit,Glob",
-        ],
-        input=prompt,
-        cwd=str(SODA_DIR),
-        capture_output=True,
-        text=True,
-        timeout=1800,
-    )
+    result = run_claude(prompt, model="claude-opus-4-7")
 
     log_file.write_text(result.stdout + result.stderr)
 
@@ -271,17 +256,11 @@ def main():
         else:
             msg = "週次レポートファイルが作成されませんでした"
             print(f"警告: {msg}")
-            subprocess.run(
-                ["python3", str(SODA_DIR / "scripts" / "notify_error.py"), "週次分析", msg],
-                cwd=str(SODA_DIR),
-            )
+            notify_error("週次分析", msg)
     else:
         msg = result.stderr[-300:]
         print(f"エラー: {msg}")
-        subprocess.run(
-            ["python3", str(SODA_DIR / "scripts" / "notify_error.py"), "週次分析", msg],
-            cwd=str(SODA_DIR),
-        )
+        notify_error("週次分析", msg)
 
 
 if __name__ == "__main__":

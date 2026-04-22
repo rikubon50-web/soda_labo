@@ -7,18 +7,12 @@
   python3 scripts/run_keyword_review.py --dry-run
 """
 
-import os
-from dotenv import load_dotenv
-import json
 import argparse
-import subprocess
-from pathlib import Path
+import json
 from datetime import date, timedelta
+from pathlib import Path
 
-SODA_DIR = Path(__file__).parent.parent
-load_dotenv(SODA_DIR / ".env")
-CLAUDE = os.path.expanduser("~/.local/bin/claude")
-PYTHON = os.environ.get("PYTHON_PATH", "/Users/rikubon50/.pyenv/shims/python3")
+from soda_utils import SODA_DIR, run_claude, notify_error
 
 PROMPT_TEMPLATE = """\
 あなたはSODAのAnalystとCEOです。
@@ -108,23 +102,12 @@ def main():
     log_file = SODA_DIR / "logs" / "cron" / f"{today}_keyword_review.log"
     print(f"[{today}] キーワード見直しを開始...")
 
-    result = subprocess.run(
-        [CLAUDE, "-p", "--dangerously-skip-permissions", "--allowedTools", "Read,Edit"],
-        input=prompt,
-        cwd=str(SODA_DIR),
-        capture_output=True,
-        text=True,
-        timeout=1800,
-    )
+    result = run_claude(prompt, tools=["Read", "Edit"])
 
     log_file.write_text(result.stdout + result.stderr)
 
     if result.returncode != 0:
-        subprocess.run(
-            [PYTHON, str(SODA_DIR / "scripts" / "notify_error.py"),
-             "キーワード見直し", f"run_keyword_review.py が失敗しました（exit: {result.returncode}）"],
-            cwd=str(SODA_DIR),
-        )
+        notify_error("キーワード見直し", f"run_keyword_review.py が失敗しました（exit: {result.returncode}）")
         print(f"エラー: {result.stderr[-300:]}")
         return
 

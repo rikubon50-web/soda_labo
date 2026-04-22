@@ -7,18 +7,13 @@
   python3 scripts/run_post_analysis.py --dry-run  # プロンプトだけ表示
 """
 
-import os
-from dotenv import load_dotenv
-import json
 import argparse
+import json
 import subprocess
-from pathlib import Path
 from datetime import date, timedelta
+from pathlib import Path
 
-SODA_DIR = Path(__file__).parent.parent
-load_dotenv(SODA_DIR / ".env")
-CLAUDE = os.path.expanduser("~/.local/bin/claude")
-PYTHON = os.environ.get("PYTHON_PATH", "/Users/rikubon50/.pyenv/shims/python3")
+from soda_utils import SODA_DIR, CLAUDE, PYTHON, run_claude, notify_error
 
 ANALYSIS_PROMPT = """\
 あなたはXアカウント「SODA」の投稿データアナリストです。
@@ -173,29 +168,12 @@ def main():
     log_file = SODA_DIR / "logs" / "cron" / f"{today}_post_analysis.log"
     print(f"[{today}] 投稿分析を開始...")
 
-    result = subprocess.run(
-        [
-            CLAUDE, "-p",
-            "--dangerously-skip-permissions",
-            "--allowedTools", "Read,Write,Glob",
-        ],
-        input=prompt,
-        cwd=str(SODA_DIR),
-        capture_output=True,
-        text=True,
-        timeout=1800,
-    )
+    result = run_claude(prompt, tools=["Read", "Write", "Glob"])
 
     log_file.write_text(result.stdout + result.stderr)
 
     if result.returncode != 0:
-        subprocess.run(
-            [
-                PYTHON, str(SODA_DIR / "scripts" / "notify_error.py"),
-                "投稿分析", f"run_post_analysis.py が失敗しました（exit: {result.returncode}）",
-            ],
-            cwd=str(SODA_DIR),
-        )
+        notify_error("投稿分析", f"run_post_analysis.py が失敗しました（exit: {result.returncode}）")
         print(f"エラー: {result.stderr[-300:]}")
         return
 

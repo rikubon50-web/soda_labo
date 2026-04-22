@@ -7,17 +7,11 @@ CTA改善スクリプト（毎日18:00）
   python3 scripts/run_cta_review.py --dry-run  # プロンプトだけ表示
 """
 
-import os
-from dotenv import load_dotenv
 import argparse
-import subprocess
-from pathlib import Path
 from datetime import date
+from pathlib import Path
 
-SODA_DIR = Path(__file__).parent.parent
-load_dotenv(SODA_DIR / ".env")
-CLAUDE = os.path.expanduser("~/.local/bin/claude")
-PYTHON = os.environ.get("PYTHON_PATH", "/Users/rikubon50/.pyenv/shims/python3")
+from soda_utils import SODA_DIR, run_claude, notify_error, read_content_mode
 
 CTA_PROMPT = """\
 あなたはSODAのCTA設計担当です。
@@ -83,8 +77,7 @@ URLは含まない（note URLは自動追加されるため）。
 
 
 def find_today_x_file() -> Path | None:
-    today = date.today()
-    ds = str(today)
+    ds = str(date.today())
     files = sorted((SODA_DIR / "content" / "x_posts").glob(f"{ds}_*.md"))
     return files[0] if files else None
 
@@ -92,16 +85,19 @@ def find_today_x_file() -> Path | None:
 def build_prompt(today: date) -> str:
     ds = str(today)
     x_file = find_today_x_file()
+    mode = read_content_mode()
+    is_show_day = mode["mode"] != "normal"
 
     growth_md = SODA_DIR / "agents" / "growth.md"
-    growth_section = ""
-    if growth_md.exists():
-        growth_section = f"\n\n---\n## Growth設計原則（必ず参照すること）\n{growth_md.read_text()[:800]}"
-
+    growth_section = (
+        f"\n\n---\n## Growth設計原則（必ず参照すること）\n{growth_md.read_text()[:800]}"
+        if growth_md.exists() else ""
+    )
     objections_md = SODA_DIR / "audience" / "objections.md"
-    objections_section = ""
-    if objections_md.exists():
-        objections_section = f"\n\n## 読者の反論・離脱理由\n{objections_md.read_text()[:400]}"
+    objections_section = (
+        f"\n\n## 読者の反論・離脱理由\n{objections_md.read_text()[:400]}"
+        if objections_md.exists() else ""
+    )
 
     lines = [
         CTA_PROMPT.replace("{DATE}", ds) + growth_section + objections_section,
@@ -113,17 +109,22 @@ def build_prompt(today: date) -> str:
 
     if x_file:
         lines.append(f"- X投稿ファイル: `{x_file.relative_to(SODA_DIR)}`")
+        if is_show_day:
+            show_name = mode.get("show_name", mode["mode"])
+            lines.append(
+                f"  ※ 今日は「{show_name}」の配信日です。"
+                f"CTA記録（logs/daily/{ds}_cta.md）は通常通り作成すること。"
+                "ただし夜投稿（3本目）の書き換えは行わないこと（番組フォーマットを壊すため）。"
+            )
     else:
         lines.append("- X投稿ファイル: （今日のファイルが見つかりません）")
 
-    # note記事の存在確認
     note_files = sorted((SODA_DIR / "content" / "note").glob(f"{ds}_*.md"))
     if note_files:
         lines.append(f"- note記事: `{note_files[0].relative_to(SODA_DIR)}`")
     else:
         lines.append("- note記事: （なし）")
 
-    # idea_bank の存在確認
     idea_bank = SODA_DIR / "products" / "idea_bank.md"
     if idea_bank.exists():
         lines.append("- アイデアバンク: `products/idea_bank.md`（テンプレ・商品準備状況の確認に使う）")
@@ -140,7 +141,7 @@ def build_prompt(today: date) -> str:
     return "\n".join(lines)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="SODA CTA改善スクリプト")
     parser.add_argument("--dry-run", action="store_true", help="プロンプトだけ表示")
     args = parser.parse_args()
@@ -156,36 +157,17 @@ def main():
     log_file = SODA_DIR / "logs" / "cron" / f"{today}_cta.log"
     print(f"[{today}] CTA改善を開始...")
 
-    result = subprocess.run(
-        [
-            CLAUDE, "-p",
-            "--dangerously-skip-permissions",
-            "--allowedTools", "Read,Write,Edit,Glob",
-        ],
-        input=prompt,
-        cwd=str(SODA_DIR),
-        capture_output=True,
-        text=True,
-        timeout=1800,
-    )
-
+    result = run_claude(prompt)
     log_file.write_text(result.stdout + result.stderr)
 
     if result.returncode != 0:
-        subprocess.run(
-            [
-                PYTHON, str(SODA_DIR / "scripts" / "notify_error.py"),
-                "CTA改善", f"run_cta_review.py が失敗しました（exit: {result.returncode}）",
-            ],
-            cwd=str(SODA_DIR),
-        )
+        notify_error("CTA改善", f"run_cta_review.py が失敗しました（exit: {result.returncode}）")
         print(f"エラー: {result.stderr[-300:]}")
         return
 
     cta_file = SODA_DIR / "logs" / "daily" / f"{today}_cta.md"
     if cta_file.exists():
         print(f"CTA記録保存完了: {cta_file}")
-        # 決定したCTAをコンソール表示
         content = cta_file.read_text()
         start = content.find("## 今日のCTA決定")
         end = content.find("## 現在の夜投稿")
