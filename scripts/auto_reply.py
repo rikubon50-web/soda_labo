@@ -12,16 +12,10 @@ X自動リプライスクリプト（毎日12:30）
 import os
 import json
 import argparse
-import subprocess
 from pathlib import Path
 from datetime import date
-from dotenv import load_dotenv
 
-SODA_DIR = Path(__file__).parent.parent
-load_dotenv(SODA_DIR / ".env")
-
-CLAUDE = os.path.expanduser("~/.local/bin/claude")
-PYTHON = os.environ.get("PYTHON_PATH", "/Users/rikubon50/.pyenv/shims/python3")
+from soda_utils import SODA_DIR, run_claude, notify_error
 
 def load_keywords() -> list[str]:
     kw_file = SODA_DIR / "config" / "reply_keywords.json"
@@ -179,13 +173,10 @@ def generate_replies(tweets: list[dict]) -> list[dict]:
     )
     prompt = GENERATE_PROMPT.replace("{TWEETS}", tweets_text)
 
-    result = subprocess.run(
-        [CLAUDE, "-p", "--dangerously-skip-permissions", "--allowedTools", "Read"],
-        input=prompt,
-        cwd=str(SODA_DIR),
-        capture_output=True,
-        text=True,
-    )
+    result = run_claude(prompt, tools=["Read"])
+    if result.returncode != 0:
+        print(f"Claude失敗（exit: {result.returncode}）: {result.stderr[:200]}")
+        return []
 
     # 返信文をパース
     replies = {}
@@ -227,13 +218,9 @@ Tweet-ID: {c['tweet_id']}
 
     prompt = REVIEW_PROMPT.replace("{DATE}", ds).replace("{CANDIDATES}", candidates_text)
 
-    result = subprocess.run(
-        [CLAUDE, "-p", "--dangerously-skip-permissions", "--allowedTools", "Read,Write"],
-        input=prompt,
-        cwd=str(SODA_DIR),
-        capture_output=True,
-        text=True,
-    )
+    result = run_claude(prompt, tools=["Read", "Write"])
+    if result.returncode != 0:
+        print(f"CEO審査失敗（exit: {result.returncode}）: {result.stderr[:200]}")
 
     # 承認済みJSONを読み込む
     approved_file = SODA_DIR / "logs" / "daily" / f"{ds}_reply_approved.json"
