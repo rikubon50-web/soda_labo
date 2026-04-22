@@ -193,7 +193,7 @@ def collect_yesterday_data() -> dict:
     data["x_content"] = x_files[0].read_text() if x_files else ""
 
     run_log = SODA_DIR / "logs" / "cron" / f"{ds}_run.log"
-    data["run_log"] = run_log.read_text()[-4000:] if run_log.exists() else ""
+    data["run_log"] = run_log.read_text(errors="replace")[-4000:] if run_log.exists() else ""
 
     meeting_files = sorted((SODA_DIR / "logs" / "meeting").glob("*_meeting.md"))
     if meeting_files:

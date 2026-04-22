@@ -66,12 +66,12 @@ agents/writer.md を読み、採用企画をもとに以下を下書きしてフ
 ## Step 5: Editor — 仕上げ
 agents/editor.md を読み、Step4で保存した3ファイルを磨いて上書き保存する。
 **必ず以下の編集メモを出力すること（省略禁止）：**
-```
+\`\`\`
 【編集メモ】
 - チェックリスト実施: トーン確認 ✅/❌ | 構成確認 ✅/❌ | 文章確認 ✅/❌
 - 変更点: （変更した内容を箇条書き。変更なしの場合も「変更なし」と明記）
 - 残課題: （直しきれなかった点があれば記載。なければ「なし」）
-```
+\`\`\`
 
 ## Step 6: CEO — 最終公開判断（推敲ループ）
 agents/ceo.md の「最終公開判断を出すとき」フォーマットで5段階スコアを出す。
@@ -110,12 +110,17 @@ except Exception:
 " 2>/dev/null)
 
 if [[ "$SHOW_MODE" != "normal" && -n "$SHOW_MODE" && -n "$SHOW_THEME" ]]; then
-  echo "[$(date)] ショーモード検出: $SHOW_MODE / テーマ: $SHOW_THEME" >> "$LOG_DIR/${TODAY}_run.log"
-  python3 "$SODA_DIR/scripts/run_show_gen.py" --show "$SHOW_MODE" --theme "$SHOW_THEME" \
-    >> "$LOG_DIR/${TODAY}_run.log" 2>&1
-  SHOW_EXIT=$?
-  if [[ $SHOW_EXIT -ne 0 ]]; then
-    notify_error "ショーコンテンツ生成($SHOW_MODE)" "run_show_gen.py が失敗しました（theme: $SHOW_THEME）"
+  # 既にショーファイルが生成済みなら重複生成しない
+  if ls "$SODA_DIR/content/x_posts/${TODAY}_${SHOW_MODE}"*.md 2>/dev/null | head -1 | grep -q .; then
+    echo "[$(date)] ショーファイル生成済み（スキップ）: $SHOW_MODE" >> "$LOG_DIR/${TODAY}_run.log"
+  else
+    echo "[$(date)] ショーモード検出: $SHOW_MODE / テーマ: $SHOW_THEME" >> "$LOG_DIR/${TODAY}_run.log"
+    python3 "$SODA_DIR/scripts/run_show_gen.py" --show "$SHOW_MODE" --theme "$SHOW_THEME" \
+      >> "$LOG_DIR/${TODAY}_run.log" 2>&1
+    SHOW_EXIT=$?
+    if [[ $SHOW_EXIT -ne 0 ]]; then
+      notify_error "ショーコンテンツ生成($SHOW_MODE)" "run_show_gen.py が失敗しました（theme: $SHOW_THEME）"
+    fi
   fi
 fi
 
@@ -123,17 +128,26 @@ fi
 if ls "$SODA_DIR/content/x_posts/${TODAY}"_*.md 2>/dev/null | head -1 | grep -q .; then
   echo "[$(date)] X投稿ファイルが既に存在します（ショー生成済み）。Claudeパイプラインをスキップします。" >> "$LOG_DIR/${TODAY}_run.log"
 else
-  # ─── Claudeパイプライン（Step 1-7）───────────────────────────
-  echo "$PROMPT" | "$CLAUDE" -p \
-    --dangerously-skip-permissions \
-    --allowedTools "Read,Write,Edit,Glob,Grep,Bash" \
-    >> "$LOG_DIR/${TODAY}_run.log" 2>&1
-  CLAUDE_EXIT=$?
+  # ─── Claudeパイプライン（Step 1-7）リトライ付き ──────────────
+  CLAUDE_EXIT=1
+  for RETRY in 1 2 3; do
+    echo "[$(date)] Claudeパイプライン試行 $RETRY/3" >> "$LOG_DIR/${TODAY}_run.log"
+    echo "$PROMPT" | "$CLAUDE" -p \
+      --dangerously-skip-permissions \
+      --allowedTools "Read,Write,Edit,Glob,Grep,Bash" \
+      >> "$LOG_DIR/${TODAY}_run.log" 2>&1
+    CLAUDE_EXIT=$?
+    [[ $CLAUDE_EXIT -eq 0 ]] && break
+    if [[ $RETRY -lt 3 ]]; then
+      echo "[$(date)] 失敗（exit: $CLAUDE_EXIT）。30秒後にリトライ..." >> "$LOG_DIR/${TODAY}_run.log"
+      sleep 30
+    fi
+  done
 
   echo "[$(date)] Claude パイプライン完了（exit: $CLAUDE_EXIT）" >> "$LOG_DIR/${TODAY}_run.log"
 
   if [[ $CLAUDE_EXIT -ne 0 ]]; then
-    notify_error "Claudeパイプライン（Step1-7）" "Claudeの実行が失敗しました（exit: $CLAUDE_EXIT）"
+    notify_error "Claudeパイプライン（Step1-7）" "3回リトライ後も失敗しました（exit: $CLAUDE_EXIT）"
     echo "[$(date)] Claudeパイプライン失敗のためStep8以降をスキップ" >> "$LOG_DIR/${TODAY}_run.log"
     exit 1
   fi

@@ -10,6 +10,7 @@ SODA 共通ユーティリティ。
 import json
 import os
 import subprocess
+import time
 from datetime import date
 from pathlib import Path
 
@@ -29,8 +30,10 @@ def run_claude(
     tools: list[str] | None = None,
     timeout: int = 1800,
     model: str | None = None,
+    max_retries: int = 3,
+    retry_wait: int = 30,
 ) -> subprocess.CompletedProcess:
-    """Claude CLI をサブプロセスで実行して CompletedProcess を返す。"""
+    """Claude CLI をサブプロセスで実行して CompletedProcess を返す。失敗時は最大 max_retries 回リトライ。"""
     tool_list = tools if tools is not None else DEFAULT_TOOLS
     cmd = [
         CLAUDE, "-p",
@@ -39,14 +42,23 @@ def run_claude(
     ]
     if model:
         cmd += ["--model", model]
-    return subprocess.run(
-        cmd,
-        input=prompt,
-        cwd=str(SODA_DIR),
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-    )
+
+    result = None
+    for attempt in range(1, max_retries + 1):
+        result = subprocess.run(
+            cmd,
+            input=prompt,
+            cwd=str(SODA_DIR),
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        if result.returncode == 0:
+            return result
+        if attempt < max_retries:
+            print(f"[リトライ {attempt}/{max_retries}] {retry_wait}秒後に再試行...")
+            time.sleep(retry_wait)
+    return result
 
 
 def notify_error(step: str, detail: str) -> None:
