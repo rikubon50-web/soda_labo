@@ -516,7 +516,20 @@ def _save_note_url(page) -> None:
         links = page.evaluate("""() =>
             Array.from(document.querySelectorAll('a[href*="/n/"]')).map(a => a.href)
         """)
-        public = [l for l in links if "/n/" in l and "editor.note.com" not in l]
+        # エディタURLからnote IDを取り出して、そのIDを含むリンクだけを候補にする
+        m_id = re.search(r'/notes/(n[0-9a-f]+)', url)
+        if m_id:
+            note_id = m_id.group(1)
+            public = [l for l in links if note_id in l and "editor.note.com" not in l]
+        else:
+            # note ID不明の場合はシステムパス（info/about等）を除外
+            _SYSTEM = {'info', 'about', 'terms', 'privacy', 'faq', 'help', 'magazine', 'contest'}
+            public = [
+                l for l in links
+                if "/n/" in l
+                and "editor.note.com" not in l
+                and l.split("note.com/", 1)[-1].split("/")[0] not in _SYSTEM
+            ]
         if public:
             url = public[0]
 

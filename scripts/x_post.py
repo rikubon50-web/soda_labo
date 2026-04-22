@@ -128,7 +128,7 @@ def post_one(filepath: str, post_number: int, dry_run: bool = False) -> None:
     if post_number == 3:
         note_url = load_note_url()
         if note_url:
-            post = post + f"\n\nnote→ {note_url}"
+            post = append_note_url(post, note_url)
             print(f"note URL追加: {note_url}")
         else:
             print("note URLファイルなし（URLなしで投稿）")
