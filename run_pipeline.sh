@@ -208,3 +208,11 @@ echo "[$(date)] メトリクス取得完了（exit: $METRICS_EXIT）" >> "$LOG_D
 if [[ $METRICS_EXIT -ne 0 ]]; then
   notify_error "Xメトリクス取得" "fetch_metrics.py が失敗しました（exit: $METRICS_EXIT）"
 fi
+
+# ─── 完了通知 ────────────────────────────────────────────────
+SHOW_INFO=""
+if [[ -n "$SHOW_MODE" ]]; then
+  SHOW_INFO="ショー: ${SHOW_MODE} / テーマ: ${SHOW_THEME}"
+fi
+python3 "$SODA_DIR/scripts/notify_error.py" --success "$SHOW_INFO" \
+  >> "$LOG_DIR/${TODAY}_run.log" 2>&1
