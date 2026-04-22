@@ -18,6 +18,7 @@ note.com 投稿スクリプト（下書き or 自動公開）
 
 import sys
 import os
+import re
 import base64
 import argparse
 from pathlib import Path
@@ -101,7 +102,7 @@ def post_to_note(filepath: str, dry_run: bool = False) -> None:
         return
 
     # サムネイル生成（Playwright起動前に行う）
-    thumbnail_path = generate_thumbnail(title)
+    thumbnail_path = generate_thumbnail(title, filepath=filepath, body=body)
 
     if ceo_score is not None:
         print(f"CEOスコア: {ceo_score} → {'公開します' if should_publish else '下書き保存します（スコア不足）'}")
@@ -260,8 +261,22 @@ def post_to_note(filepath: str, dry_run: bool = False) -> None:
         ctx.close()
 
 
-def generate_thumbnail(title: str) -> Path | None:
-    """Geminiでnoteサムネイル画像を生成してファイルに保存する"""
+def generate_thumbnail(title: str, filepath: str | None = None, body: str | None = None) -> Path | None:
+    """サムネイル画像を生成してファイルに保存する。
+    aitsm 記事の場合は専用テンプレートを使用し、それ以外は Gemini で生成する。
+    """
+    # ── aitsm 専用テンプレート ────────────────────────────────────────
+    if filepath and "_aitsm" in Path(filepath).stem:
+        try:
+            from thumbnail_aitsm import generate as aitsm_gen, extract_verdict
+            # タイトルから番組名プレフィックスを除いてテーマだけ取り出す
+            theme = re.sub(r"^AIそれって本当？[｜|]\s*", "", title).strip()
+            verdict = extract_verdict(body) if body else None
+            return aitsm_gen(theme, verdict)
+        except Exception as e:
+            print(f"aitsm テンプレート生成失敗（{e}）→ Gemini にフォールバック")
+
+    # ── Gemini（汎用）────────────────────────────────────────────────
     api_key = os.environ.get("GEMINI_API_KEY", "")
     if not api_key:
         print("GEMINI_API_KEY未設定 → サムネイル生成をスキップ")
