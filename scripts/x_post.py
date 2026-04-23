@@ -67,13 +67,10 @@ def parse_posts(filepath: str) -> list[str]:
 
 
 def build_post_text(content: str, hashtags: str, max_len: int = 140) -> str:
-    """本文＋ハッシュタグを結合し、max_len を超える場合は本文を削る"""
+    """本文＋ハッシュタグを結合する（文字数制限はプロンプト側で担保、ここでは削らない）"""
     if not hashtags:
-        return content[:max_len]
-    tag_block = "\n" + hashtags
-    available = max_len - len(tag_block)
-    body = content[:available] if len(content) > available else content
-    return body + tag_block
+        return content
+    return content + "\n" + hashtags
 
 
 def save_tweet_id(filepath: str, tweet_id: str, post_number: int, text: str) -> None:
@@ -137,10 +134,6 @@ def post_one(filepath: str, post_number: int, dry_run: bool = False) -> None:
         print(f"=== DRY RUN: {label}投稿（{post_number}本目）({len(post)}文字) ===")
         print(post)
         return
-
-    if len(post) > 280:
-        print(f"警告: {post_number}本目が280字超（{len(post)}字）。先頭280字で投稿します。")
-        post = post[:280]
 
     import tweepy
     client = tweepy.Client(
