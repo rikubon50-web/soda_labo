@@ -35,8 +35,23 @@ PROMPT="SODAの本日（${TODAY}）のコンテンツパイプラインを全工
 
 ファイルが存在しない場合はスキップしてよい。
 
+## Step 0: ニュース収集（Step 1の前に必ず実行）
+WebSearch toolで以下のクエリを検索し、本日時点の最新AIニュースを把握する。
+
+- 検索クエリ: "AI news today ${TODAY}"
+- 検索クエリ: "生成AI ニュース ${TODAY}"
+
+取得した情報から **本日公開・発表されたもの** に絞り、以下を判断基準にトップ3を選ぶ:
+1. 読者（AI・副業・発信に関心ある20代）が「それ知らなかった」と感じるか
+2. 「結局なにがすごいのか」を3分で説明できる規模感か
+3. 自分ごとにできるか（ツール・働き方・副業への影響）
+
+選んだトップ3をメモしてStep 1のCEOに渡すこと。
+ニュースが見つからない・古い情報しかない場合はStep 0をスキップしてよい。
+
 ## Step 1: CEO — 本日の優先テーマ決定
 agents/ceo.md を読み、CEOとして本日の優先テーマを決定する。
+**Step 0で取得した最新ニュースがある場合は、それを最優先のテーマ候補として検討すること。**
 **朝会議ログ（logs/meeting/${TODAY}_meeting.md）のCEO最終判断・Writerへの指示を最優先で参照すること。**
 content/note/ の直近ファイルを確認してDay Nシリーズの継続判断を行う。
 出力形式: agents/ceo.md の「優先テーマを出すとき」フォーマット。
@@ -134,7 +149,7 @@ else
     echo "[$(date)] Claudeパイプライン試行 $RETRY/5" >> "$LOG_DIR/${TODAY}_run.log"
     echo "$PROMPT" | "$CLAUDE" -p \
       --dangerously-skip-permissions \
-      --allowedTools "Read,Write,Edit,Glob,Grep,Bash" \
+      --allowedTools "Read,Write,Edit,Glob,Grep,Bash,WebSearch,WebFetch" \
       >> "$LOG_DIR/${TODAY}_run.log" 2>&1
     CLAUDE_EXIT=$?
     [[ $CLAUDE_EXIT -eq 0 ]] && break
