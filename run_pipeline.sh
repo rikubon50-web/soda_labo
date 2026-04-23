@@ -130,24 +130,24 @@ if ls "$SODA_DIR/content/x_posts/${TODAY}"_*.md 2>/dev/null | head -1 | grep -q 
 else
   # ─── Claudeパイプライン（Step 1-7）リトライ付き ──────────────
   CLAUDE_EXIT=1
-  for RETRY in 1 2 3; do
-    echo "[$(date)] Claudeパイプライン試行 $RETRY/3" >> "$LOG_DIR/${TODAY}_run.log"
+  for RETRY in 1 2 3 4 5; do
+    echo "[$(date)] Claudeパイプライン試行 $RETRY/5" >> "$LOG_DIR/${TODAY}_run.log"
     echo "$PROMPT" | "$CLAUDE" -p \
       --dangerously-skip-permissions \
       --allowedTools "Read,Write,Edit,Glob,Grep,Bash" \
       >> "$LOG_DIR/${TODAY}_run.log" 2>&1
     CLAUDE_EXIT=$?
     [[ $CLAUDE_EXIT -eq 0 ]] && break
-    if [[ $RETRY -lt 3 ]]; then
-      echo "[$(date)] 失敗（exit: $CLAUDE_EXIT）。30秒後にリトライ..." >> "$LOG_DIR/${TODAY}_run.log"
-      sleep 30
+    if [[ $RETRY -lt 5 ]]; then
+      echo "[$(date)] 失敗（exit: $CLAUDE_EXIT）。60秒後にリトライ..." >> "$LOG_DIR/${TODAY}_run.log"
+      sleep 60
     fi
   done
 
   echo "[$(date)] Claude パイプライン完了（exit: $CLAUDE_EXIT）" >> "$LOG_DIR/${TODAY}_run.log"
 
   if [[ $CLAUDE_EXIT -ne 0 ]]; then
-    notify_error "Claudeパイプライン（Step1-7）" "3回リトライ後も失敗しました（exit: $CLAUDE_EXIT）"
+    notify_error "Claudeパイプライン（Step1-7）" "5回リトライ後も失敗しました（exit: $CLAUDE_EXIT）"
     echo "[$(date)] Claudeパイプライン失敗のためStep8以降をスキップ" >> "$LOG_DIR/${TODAY}_run.log"
     exit 1
   fi
