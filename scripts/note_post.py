@@ -539,11 +539,18 @@ def _save_note_url(page) -> None:
         url_file.write_text(url)
         print(f"note URL保存: {url}")
     else:
-        # editor URLからnote IDを抽出してURLを構築（ユーザー名不明のため記録）
-        m = re.search(r'/notes/(n[0-9a-f]+)/', page.url)
-        if m:
+        # editor URLからnote IDを抽出してユーザー名と組み合わせてURL構築
+        m = re.search(r'/notes/(n[0-9a-f]+)', page.url)
+        username = os.environ.get("NOTE_USERNAME", "")
+        if m and username:
             note_id = m.group(1)
-            print(f"note ID: {note_id} （公開URL未取得 - 手動で確認してください）")
+            constructed_url = f"https://note.com/{username}/n/{note_id}"
+            url_file = SODA_DIR / "logs" / "daily" / f"{date.today()}_note_url.txt"
+            url_file.parent.mkdir(parents=True, exist_ok=True)
+            url_file.write_text(constructed_url)
+            print(f"note URL保存（構築）: {constructed_url}")
+        elif m:
+            print(f"note ID: {m.group(1)} （NOTE_USERNAME未設定のため手動確認してください）")
         else:
             print(f"警告: note記事URLの取得失敗（現在URL: {url}）")
 
