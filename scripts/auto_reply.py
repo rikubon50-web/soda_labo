@@ -148,11 +148,14 @@ def search_tweets() -> list[dict]:
             resp = client.search_recent_tweets(
                 query=f"{keyword} -is:retweet -is:reply lang:ja",
                 max_results=10,
-                tweet_fields=["id", "text", "author_id", "created_at"],
+                tweet_fields=["id", "text", "author_id", "created_at", "reply_settings"],
             )
             if resp.data:
                 for t in resp.data:
                     if t.id not in seen_ids:
+                        # 返信設定が「全員」のツイートだけを対象にする
+                        if getattr(t, "reply_settings", "everyone") != "everyone":
+                            continue
                         seen_ids.add(t.id)
                         tweets.append({
                             "id": str(t.id),
@@ -218,12 +221,15 @@ Tweet-ID: {c['tweet_id']}
 
     prompt = REVIEW_PROMPT.replace("{DATE}", ds).replace("{CANDIDATES}", candidates_text)
 
+    # 実行前に古いファイルを削除（失敗時の誤流用を防ぐ）
+    approved_file = SODA_DIR / "logs" / "daily" / f"{ds}_reply_approved.json"
+    approved_file.unlink(missing_ok=True)
+
     result = run_claude(prompt, tools=["Read", "Write"])
     if result.returncode != 0:
         print(f"CEO審査失敗（exit: {result.returncode}）: {result.stderr[:200]}")
+        return []
 
-    # 承認済みJSONを読み込む
-    approved_file = SODA_DIR / "logs" / "daily" / f"{ds}_reply_approved.json"
     if approved_file.exists():
         return json.loads(approved_file.read_text())
     return []

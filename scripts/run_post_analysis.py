@@ -113,8 +113,11 @@ def build_prompt(data: dict, today: date) -> str:
                 f"IMP:{met.get('impressions', '?')} "
                 f"いいね:{met.get('likes', '?')} "
                 f"RT:{met.get('retweets', '?')} "
+                f"引用:{met.get('quotes', '?')} "
                 f"返信:{met.get('replies', '?')} "
-                f"ブックマーク:{met.get('bookmarks', '?')}"
+                f"ブックマーク:{met.get('bookmarks', '?')} "
+                f"リンククリック:{met.get('url_clicks', '?')} "
+                f"プロフ流入:{met.get('profile_clicks', '?')}"
             )
             lines.append(f"  本文: {m.get('text', '')[:80]}")
     else:

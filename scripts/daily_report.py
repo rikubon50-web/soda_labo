@@ -21,7 +21,7 @@ load_dotenv(SODA_DIR / ".env")
 
 # 各スクリプトの定義: (表示名, 予定時刻, cronログ, 期待する出力ファイル or None)
 SYSTEMS = [
-    ("朝パイプライン（note生成・X朝投稿）", "08:07", "logs/cron/{date}_run.log",     None),
+    ("朝パイプライン（note生成・X朝投稿）", "08:07", "logs/cron/{date}_run.log",     "content/note/{date}_*.md"),
     ("全Agent朝会議",                     "07:30", "logs/cron/meeting.log",          "logs/meeting/{date}_meeting.md"),
     ("投稿分析",                           "08:45", "logs/cron/post_analysis.log",    "logs/daily/{date}_post_analysis.md"),
     ("アイデア資産化",                     "09:00", "logs/cron/idea_mining.log",      "logs/ideas/{date}_ideas.md"),
@@ -41,16 +41,49 @@ WEEKLY_SYSTEMS = [
 
 
 def check_log_for_errors(log_path: Path) -> tuple[bool, str]:
-    """ログファイルを読んでエラーの有無を返す。(ran_today, error_snippet)"""
+    """ログファイルを読んでエラーの有無を返す。(ran_today, error_snippet)
+
+    誤検知を防ぐルール:
+    - 今日の日付を含む行のみを対象にする（共有ログの過去エラーを除外）
+    - "エラー通知送信" "エラー記録" は通知処理の正常出力なので除外
+    - "notify_error" を含む行はスクリプトパス参照なので除外
+    - 最後に成功マーカーがあれば、それ以前のエラーは解消済みとして無視
+    """
     if not log_path.exists():
         return False, "ログファイルなし"
+
     text = log_path.read_text(errors="replace")
     today_str = str(date.today())
-    # 今日の記録があるか（日付文字列またはタイムスタンプで判断）
+    all_lines = text.splitlines()
+
+    # 今日の記録があるか
     ran_today = today_str in text
-    # エラー検出
-    error_lines = [l.strip() for l in text.splitlines()
-                   if any(w in l for w in ["エラー", "Error", "error", "Traceback", "失敗", "exit: 1"])]
+
+    # 今日の行だけに絞る（共有ログで過去エラーを拾わないため）
+    today_lines = [l for l in all_lines if today_str in l]
+    target_lines = today_lines if today_lines else all_lines[-200:]
+
+    # 最後に成功マーカーがあれば問題なし（途中の失敗＋最終成功のケース）
+    SUCCESS_MARKERS = ["全工程完了", "完了（exit: 0", "正常完了", "会議まとめ保存完了"]
+    if any(any(m in l for m in SUCCESS_MARKERS) for l in target_lines[-30:]):
+        return ran_today, ""
+
+    # 誤検知除外パターン
+    EXCLUDE = ["エラー通知送信", "エラー記録（", "notify_error", "エラー通知受信"]
+
+    def is_error_line(line: str) -> bool:
+        if any(ex in line for ex in EXCLUDE):
+            return False
+        # 明確なエラーパターンのみ対象
+        return (
+            "Traceback" in line
+            or "exit: 1" in line
+            or ("失敗" in line and ("exit" in line or "failed" in line.lower() or "失敗しました" in line))
+            or ("エラー" in line and "エラー通知" not in line and "エラー記録" not in line)
+            or re.search(r"\bError\b:", line) is not None
+        )
+
+    error_lines = [l.strip() for l in target_lines if is_error_line(l)]
     snippet = "\n".join(error_lines[-5:]) if error_lines else ""
     return ran_today, snippet
 
@@ -124,11 +157,14 @@ def build_email_body(today: date) -> tuple[str, str]:
         log_path = SODA_DIR / log_rel.replace("{date}", ds)
         ran, err_snippet = check_log_for_errors(log_path)
 
-        # 出力ファイルの存在確認
+        # 出力ファイルの存在確認（glob パターン対応）
         output_ok = True
         if output_rel:
-            output_path = SODA_DIR / output_rel.replace("{date}", ds)
-            output_ok = output_path.exists()
+            rel = output_rel.replace("{date}", ds)
+            if "*" in rel:
+                output_ok = bool(list(SODA_DIR.glob(rel)))
+            else:
+                output_ok = (SODA_DIR / rel).exists()
 
         if not ran:
             icon = "⏳"

@@ -54,27 +54,33 @@ def fetch_and_save(days: int) -> None:
         try:
             response = client.get_tweet(
                 tweet_id,
-                tweet_fields=["public_metrics", "created_at"],
+                tweet_fields=["public_metrics", "non_public_metrics", "created_at"],
             )
             if not response.data:
                 continue
 
-            metrics = response.data.public_metrics or {}
+            pub = response.data.public_metrics or {}
+            non_pub = response.data.non_public_metrics or {}
             entry = {
                 **record,
                 "metrics": {
-                    "impressions":  metrics.get("impression_count", 0),
-                    "likes":        metrics.get("like_count", 0),
-                    "retweets":     metrics.get("retweet_count", 0),
-                    "replies":      metrics.get("reply_count", 0),
-                    "bookmarks":    metrics.get("bookmark_count", 0),
+                    "impressions":       pub.get("impression_count", 0),
+                    "likes":             pub.get("like_count", 0),
+                    "retweets":          pub.get("retweet_count", 0),
+                    "replies":           pub.get("reply_count", 0),
+                    "quotes":            pub.get("quote_count", 0),
+                    "bookmarks":         pub.get("bookmark_count", 0),
+                    "url_clicks":        non_pub.get("url_link_clicks", 0),
+                    "profile_clicks":    non_pub.get("user_profile_clicks", 0),
                 },
             }
             metrics_by_date.setdefault(post_date, []).append(entry)
             print(f"取得完了: {record['theme']} {record['post_number']}本目 "
                   f"| いいね{entry['metrics']['likes']} "
                   f"/ RT{entry['metrics']['retweets']} "
-                  f"/ IMP{entry['metrics']['impressions']}")
+                  f"/ IMP{entry['metrics']['impressions']} "
+                  f"/ クリック{entry['metrics']['url_clicks']} "
+                  f"/ プロフ{entry['metrics']['profile_clicks']}")
 
         except Exception as e:
             # APIアクセス制限やフリープランではインプレッションが取れない場合がある

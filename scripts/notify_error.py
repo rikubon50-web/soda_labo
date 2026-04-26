@@ -16,12 +16,24 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 
+def _read_tail(path: Path, lines: int = 60) -> str:
+    """ファイルの末尾 N 行を返す。存在しない場合は空文字。"""
+    if not path.exists():
+        return "（ファイルなし）"
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        return "\n".join(text[-lines:])
+    except Exception as e:
+        return f"（読み取り失敗: {e}）"
+
+
 def notify_error(step: str, detail: str) -> None:
     today = date.today().strftime("%Y-%m-%d")
     ts = datetime.now().strftime("%H:%M:%S")
+    soda_dir = Path(__file__).parent.parent
 
     # ログファイルに記録
-    log_dir = Path(__file__).parent.parent / "logs" / "errors"
+    log_dir = soda_dir / "logs" / "errors"
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / f"{today}_errors.log"
     with log_file.open("a", encoding="utf-8", errors="replace") as f:
@@ -32,16 +44,25 @@ def notify_error(step: str, detail: str) -> None:
         print(f"エラー記録（メール未設定）: {step}")
         return
 
-    log_path = Path(__file__).parent.parent / "logs" / "cron" / f"{today}_run.log"
+    run_log_path = soda_dir / "logs" / "cron" / f"{today}_run.log"
+    error_log_path = soda_dir / "logs" / "errors" / f"{today}_errors.log"
+    run_log_tail = _read_tail(run_log_path, lines=60)
+    error_log_tail = _read_tail(error_log_path, lines=20)
+
     body = f"""SODAパイプラインでエラーが発生しました。
 
 ステップ: {step}
-日付: {today}
+日付: {today} {ts}
+作業ディレクトリ: {soda_dir}
 
 詳細:
 {detail}
 
-ログファイル: {log_path}
+--- 実行ログ末尾（{run_log_path.name} 最新60行）---
+{run_log_tail}
+
+--- エラーログ（{error_log_path.name} 最新20行）---
+{error_log_tail}
 """
     print(f"エラー通知送信: {step}")
     _send_gmail(f"[SODA] {today} エラー: {step}", body)

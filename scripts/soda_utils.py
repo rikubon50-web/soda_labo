@@ -10,7 +10,7 @@ SODA 共通ユーティリティ。
 import json
 import os
 import subprocess
-import time
+import sys
 from datetime import date
 from pathlib import Path
 
@@ -18,6 +18,11 @@ from dotenv import load_dotenv
 
 SODA_DIR = Path(__file__).parent.parent
 load_dotenv(SODA_DIR / ".env")
+
+# src/ を sys.path に追加（cron 環境でも確実に動くよう絶対パスで）
+_src = str(SODA_DIR / "src")
+if _src not in sys.path:
+    sys.path.insert(0, str(SODA_DIR))
 
 CLAUDE = os.path.expanduser("~/.local/bin/claude")
 PYTHON = os.environ.get("PYTHON_PATH", "/Users/rikubon50/.pyenv/shims/python3")
@@ -33,32 +38,25 @@ def run_claude(
     max_retries: int = 3,
     retry_wait: int = 30,
 ) -> subprocess.CompletedProcess:
-    """Claude CLI をサブプロセスで実行して CompletedProcess を返す。失敗時は最大 max_retries 回リトライ。"""
-    tool_list = tools if tools is not None else DEFAULT_TOOLS
-    cmd = [
-        CLAUDE, "-p",
-        "--dangerously-skip-permissions",
-        "--allowedTools", ",".join(tool_list),
-    ]
-    if model:
-        cmd += ["--model", model]
-
-    result = None
-    for attempt in range(1, max_retries + 1):
-        result = subprocess.run(
-            cmd,
-            input=prompt,
-            cwd=str(SODA_DIR),
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-        if result.returncode == 0:
-            return result
-        if attempt < max_retries:
-            print(f"[リトライ {attempt}/{max_retries}] {retry_wait}秒後に再試行...")
-            time.sleep(retry_wait)
-    return result
+    """Claude CLI をサブプロセスで実行して CompletedProcess を返す。失敗時は最大 max_retries 回リトライ。
+    内部で src.services.claude_service を使用する。
+    """
+    from src.services.claude_service import run_claude as _run
+    result = _run(
+        prompt,
+        tools=tools,
+        timeout=timeout,
+        model=model,
+        max_retries=max_retries,
+        retry_wait=retry_wait,
+    )
+    # CompletedProcess 互換オブジェクトを返す
+    return subprocess.CompletedProcess(
+        args=[],
+        returncode=result.returncode,
+        stdout=result.stdout,
+        stderr=result.stderr,
+    )
 
 
 def notify_error(step: str, detail: str) -> None:

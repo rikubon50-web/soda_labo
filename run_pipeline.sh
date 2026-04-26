@@ -38,8 +38,8 @@ PROMPT="SODAの本日（${TODAY}）のコンテンツパイプラインを全工
 ## Step 0: ニュース収集（Step 1の前に必ず実行）
 WebSearch toolで以下のクエリを検索し、本日時点の最新AIニュースを把握する。
 
-- 検索クエリ: "AI news today ${TODAY}"
-- 検索クエリ: "生成AI ニュース ${TODAY}"
+- 検索クエリ: \"AI news today ${TODAY}\"
+- 検索クエリ: \"生成AI ニュース ${TODAY}\"
 
 取得した情報から **本日公開・発表されたもの** に絞り、以下を判断基準にトップ3を選ぶ:
 1. 読者（AI・副業・発信に関心ある20代）が「それ知らなかった」と感じるか
@@ -74,7 +74,8 @@ agents/writer.md を読み、採用企画をもとに以下を下書きしてフ
   note記事の末尾に agents/writer.md の「note記事ハッシュタグルール」に従い #タグ を5つ付与する。
 - X投稿3本 → content/x_posts/${TODAY}_[テーマ略称].md
   （Day Nシリーズなら content/drafts/template_day-n_x.md を参照）
-  各投稿の末尾に agents/writer.md の「X投稿ハッシュタグルール」に従い #タグ を5つ付与する（140字制限厳守）。
+  朝・昼は140字以内。ハッシュタグ・外部リンクは入れない。
+  夜（3本目）はagents/writer.md の「夜（長文投稿）の構成」に従い500〜1500字の長文で書く。note記事の核心をX上で完結させること。外部リンク不要。
 - 短尺動画台本 → content/short_videos/${TODAY}_[タイトル略称].md
   （Day Nシリーズなら content/drafts/template_day-n_video.md を参照）
 
@@ -150,6 +151,7 @@ else
     echo "$PROMPT" | "$CLAUDE" -p \
       --dangerously-skip-permissions \
       --allowedTools "Read,Write,Edit,Glob,Grep,Bash,WebSearch,WebFetch" \
+      --fallback-model claude-haiku-4-5-20251001 \
       >> "$LOG_DIR/${TODAY}_run.log" 2>&1
     CLAUDE_EXIT=$?
     [[ $CLAUDE_EXIT -eq 0 ]] && break
