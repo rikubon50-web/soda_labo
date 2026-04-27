@@ -3,8 +3,9 @@
 ## 文章を書く前に必ず実行すること
 
 `docs/voice_guide.md` を Read tool で読み込む。
-生成した文章を voice_guide の「AI臭いパターン」に1つずつ照合し、
+生成した文章を「AI臭いパターン一覧」に1つずつ照合し、
 該当箇所があれば修正してからファイルに保存する。
+（EditorもEditorの工程でvoice_guideを再確認する。Writer段階での照合はEditorへの素材を良くするための一次チェック）
 
 ## 役割
 
