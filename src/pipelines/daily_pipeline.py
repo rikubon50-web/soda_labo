@@ -52,6 +52,7 @@ def build_pipeline_prompt(today: date) -> str:
 4. audience/personas.md — 読者像（PlannerとWriterは企画・文章設計時に必ず参照）
 5. audience/pain_points.md — 読者のペインポイント（企画の切り口に使う）
 6. audience/winning_topics.md — 反応が取れた確定テーマ（あれば優先的に参考にする）
+7. docs/voice_guide.md — 声の基準書（WriterとEditorは必ず参照すること）
 
 ファイルが存在しない場合はスキップしてよい。
 
@@ -99,6 +100,8 @@ agents/writer.md を読み、採用企画をもとに以下を下書きしてフ
 - 短尺動画台本 → content/short_videos/{ds}_[タイトル略称].md
   （Day Nシリーズなら content/drafts/template_day-n_video.md を参照）
 
+**文章生成前に `docs/voice_guide.md` の「AI臭いパターン一覧」を確認し、該当パターンが出ていないかを照合してからファイルに保存すること。**
+
 ## Step 5: Editor — 仕上げ
 agents/editor.md を読み、Step4で保存した3ファイルを磨いて上書き保存する。
 **必ず以下の編集メモを出力すること（省略禁止）：**
@@ -107,10 +110,12 @@ agents/editor.md を読み、Step4で保存した3ファイルを磨いて上書
 - チェックリスト実施: トーン確認 ✅/❌ | 構成確認 ✅/❌ | 文章確認 ✅/❌
 - 変更点: （変更した内容を箇条書き。変更なしの場合も「変更なし」と明記）
 - 残課題: （直しきれなかった点があれば記載。なければ「なし」）
+- 自然さ確認: voice_guide照合 ✅/❌ | AI臭いパターン修正箇所（あれば列挙、なければ「なし」）
 ```
 
 ## Step 6: CEO — 最終公開判断（推敲ループ）
 agents/ceo.md の「最終公開判断を出すとき」フォーマットで5段階スコアを出す。
+採点時は自然さも評価すること：`docs/voice_guide.md` の「AI臭いパターン一覧」が原稿に残っている場合はスコアを1点減点する。
 スコアが3以下の場合はEditorにStep5をやり直させ、再度CEOが採点する。
 これをスコアが4以上になるまで繰り返す。ただし最大3回のやり直しで打ち切る（無限ループ防止）。
 スコアが確定したら、以下の形式で logs/daily/{ds}_ceo_score.txt に保存する（1行目がスコア数字のみ）：
