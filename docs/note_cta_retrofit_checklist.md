@@ -28,11 +28,11 @@
 
 ## 対象記事
 
+**除外3件**（note.com 未公開 or 別アカウント所属）：
+- `2026-04-19_ai-studio-day2.md`、`2026-04-19_ai-studio-launch.md`、`2026-04-20_ai-studio-day3.md` は手動更新の対象外（ローカル .md は更新済みだが note.com 上での作業は不要）
+
 | ✓ | 日付 | ファイル | アクション | URL |
 |---|------|---------|-----------|-----|
-| ☐ | 2026-04-19 | `2026-04-19_ai-studio-day2.md` | ➕ 末尾追加 | （URL記録なし） |
-| ☐ | 2026-04-19 | `2026-04-19_ai-studio-launch.md` | ➕ 末尾追加 | （URL記録なし） |
-| ☐ | 2026-04-20 | `2026-04-20_ai-studio-day3.md` | ➕ 末尾追加 | [開く](https://note.com/info/n/n49bbcbdefe1a) |
 | ☐ | 2026-04-21 | `2026-04-21_ai-studio-day4.md` | 🔁 差替え（Form→X） | [開く](https://note.com/info/n/n49bbcbdefe1a) |
 | ☐ | 2026-04-22 | `2026-04-22_aitsm.md` | ➕ 新規追加 | [開く](https://note.com/soda_labo/n/n25028206c430) |
 | ☐ | 2026-04-24 | `2026-04-24_aitsm.md` | ➕ 新規追加 | （URL記録なし） |
