@@ -67,10 +67,8 @@ def parse_posts(filepath: str) -> list[str]:
 
 
 def build_post_text(content: str, hashtags: str, max_len: int = 140) -> str:
-    """本文＋ハッシュタグを結合する（文字数制限はプロンプト側で担保、ここでは削らない）"""
-    if not hashtags:
-        return content
-    return content + "\n" + hashtags
+    """本文のみを返す（ハッシュタグは writer.md ポリシーにより投稿しない）"""
+    return content
 
 
 def save_tweet_id(filepath: str, tweet_id: str, post_number: int, text: str) -> None:
@@ -121,14 +119,11 @@ def post_one(filepath: str, post_number: int, dry_run: bool = False) -> None:
 
     post = build_post_text(content, hashtags)
 
-    # 夜投稿（3本目）にnote URLを追加（build_post_text後に付けてURLが切れないようにする）
+    # 夜投稿（3本目）のみ note CTA を自動付与
     if post_number == 3:
         note_url = load_note_url()
         if note_url:
             post = append_note_url(post, note_url)
-            print(f"note URL追加: {note_url}")
-        else:
-            print("note URLファイルなし（URLなしで投稿）")
 
     if dry_run:
         print(f"=== DRY RUN: {label}投稿（{post_number}本目）({len(post)}文字) ===")
