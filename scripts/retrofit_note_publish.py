@@ -39,14 +39,41 @@ NOTE_DIR = SODA_DIR / "content" / "note"
 URL_DIR = SODA_DIR / "logs" / "daily"
 PROGRESS_FILE = URL_DIR / "cta_retrofit_progress.json"
 
-PASTE_REPLACE_JS = """
+SELECT_ALL_JS = """
+() => {
+    const editor = document.querySelector('.ProseMirror');
+    if (!editor) return { ok: false, reason: 'ProseMirror not found' };
+    editor.focus();
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    const range = document.createRange();
+    range.selectNodeContents(editor);
+    sel.addRange(range);
+    return {
+        ok: true,
+        selected_chars: sel.toString().length,
+        editor_chars: editor.innerText.length,
+    };
+}
+"""
+
+CHECK_EMPTY_JS = """
+() => {
+    const editor = document.querySelector('.ProseMirror');
+    if (!editor) return { ok: false };
+    return {
+        ok: true,
+        chars: editor.innerText.trim().length,
+        preview: editor.innerText.slice(0, 80),
+    };
+}
+"""
+
+PASTE_JS = """
 (markdownText) => {
     const editor = document.querySelector('.ProseMirror');
     if (!editor) return { ok: false, reason: 'ProseMirror not found' };
     editor.focus();
-    // 全選択（document.execCommand は廃止予定だが ProseMirror で動作する）
-    document.execCommand('selectAll');
-    // 削除してから貼り付け（ProseMirror は paste で置換するが念のため）
     const clipboardData = new DataTransfer();
     clipboardData.setData('text/plain', markdownText);
     const event = new ClipboardEvent('paste', {
@@ -68,8 +95,11 @@ def parse_article(filepath: Path) -> tuple[str, str]:
 
 
 def derive_editor_url(public_url: str) -> str | None:
-    """公開URL（note.com/foo/n/<id>）→ editor.note.com/notes/<id>/edit/ に変換"""
-    m = re.search(r"/n/([0-9a-f]+)", public_url)
+    """公開URL（note.com/foo/n/<id>）→ editor.note.com/notes/<id>/edit/ に変換
+
+    note ID は "n" + 16進数文字列（例: n25028206c430）。
+    """
+    m = re.search(r"/n/(n[0-9a-f]+)", public_url)
     if not m:
         return None
     return f"https://editor.note.com/notes/{m.group(1)}/edit/"
@@ -129,7 +159,46 @@ def update_one(page, md_path: Path, url: str) -> tuple[bool, str]:
         return False, "ProseMirror 未検出（ログイン or ページ読み込み失敗）"
     page.wait_for_timeout(2000)
 
-    result = page.evaluate(PASTE_REPLACE_JS, body)
+    # 既存内容を確実に消すため、エディタをクリック→Selection APIで全選択→Backspace
+    editor_el = page.query_selector(".ProseMirror")
+    if not editor_el:
+        return False, "ProseMirror エディタを取得できませんでした"
+    editor_el.click()
+    page.wait_for_timeout(500)
+
+    select_result = page.evaluate(SELECT_ALL_JS)
+    if not select_result.get("ok"):
+        return False, f"全選択失敗: {select_result.get('reason')}"
+    print(f"    全選択: {select_result.get('selected_chars')} chars / "
+          f"editor: {select_result.get('editor_chars')} chars")
+    page.wait_for_timeout(400)
+
+    # Backspace で選択範囲を削除（Delete より確実なケースが多い）
+    page.keyboard.press("Backspace")
+    page.wait_for_timeout(800)
+
+    # 削除確認
+    empty_check = page.evaluate(CHECK_EMPTY_JS)
+    remaining = empty_check.get("chars", -1)
+    if remaining > 5:
+        # 1回で消えなければもう一度やる
+        print(f"    残り {remaining} chars。再度全選択→Backspace")
+        page.evaluate(SELECT_ALL_JS)
+        page.wait_for_timeout(300)
+        page.keyboard.press("Backspace")
+        page.wait_for_timeout(600)
+        empty_check = page.evaluate(CHECK_EMPTY_JS)
+        remaining = empty_check.get("chars", -1)
+
+    if remaining > 5:
+        return False, (
+            f"既存内容クリア失敗（残り {remaining} chars: "
+            f"{empty_check.get('preview', '')[:40]}...）"
+        )
+    print(f"    クリア完了（残り {remaining} chars）")
+
+    # 新本文をペースト
+    result = page.evaluate(PASTE_JS, body)
     if not result.get("ok"):
         return False, f"ペースト失敗: {result.get('reason')}"
     print(f"    ペースト完了（先頭: {result.get('editorText', '')[:30]}...）")
