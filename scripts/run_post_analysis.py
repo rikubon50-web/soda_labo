@@ -67,7 +67,7 @@ def collect_yesterday_data() -> dict:
         if f.exists():
             try:
                 j = json.loads(f.read_text())
-                if j.get("source") == "note":
+                if isinstance(j, dict) and j.get("source") == "note":
                     metrics.append(j)
             except (json.JSONDecodeError, KeyError):
                 pass

@@ -16,7 +16,6 @@ CEO・Secretaryはここを参照して、何が使えるかを把握する。
 | Editor | agents/editor.md | 品質向上・トーン統一・冗長削除 |
 | Researcher | agents/researcher.md | 採用テーマの一次取材・取材ノート作成 |
 | Critic | agents/critic.md | note記事の敵対的批評・AI臭採点 |
-
 | Analyst | agents/analyst.md | noteメトリクス分析・勝ちパターン抽出・次週テーマ提案 |
 | Growth | agents/growth.md | CTA最適化・導線設計・無料→購買の接続管理 |
 

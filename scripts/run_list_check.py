@@ -4,7 +4,7 @@
 note内で完結する導線4項目の設置状況を確認し、未設定なら具体的なアクションを出力する。
 使い方:
   python3 scripts/run_list_check.py          # 実行
-  python3 scripts/run_list_check.py --dry-run  # プロンプトだけ表示
+  python3 scripts/run_list_check.py --dry-run  # 結果を表示するだけ（保存・通知なし）
 """
 
 import json
@@ -17,58 +17,6 @@ SODA_DIR = Path(__file__).parent.parent
 FUNNEL_STATUS = SODA_DIR / "docs" / "funnel_status.md"
 FOLLOWER_LOG = SODA_DIR / "logs" / "ops" / "follower_log.jsonl"
 MAGAZINES_CONFIG = SODA_DIR / "config" / "magazines.json"
-
-CHECK_PROMPT = """\
-あなたはSODAのnote導線管理担当です。
-以下のデータを確認し、4項目の導線設置状況をチェックして結果を保存してください。
-
-## チェック項目と判定基準
-
-### 1. 今日の記事がマガジンに入っているか
-- logs/daily/{DATE}_magazine.txt が存在し、その誌名が config/magazines.json に登録されているか確認する
-- どちらかのファイルが未整備（未作成）なら「🔧 未整備」として扱う
-
-### 2. 今日の記事末尾にnoteフォローCTAがあるか
-- 今日のnote記事ファイル（content/note/{DATE}_*.md）の末尾400字を読み、「フォロー」を含むか確認する
-
-### 3. プロフィール固定記事が設定されているか
-- docs/funnel_status.md の「サイトマップ記事が固定表示されているか」欄が ✅ かどうかを確認する
-- 未設定なら具体的なアクション文を出す
-
-### 4. フォロワー数の記録
-- 当日の logs/metrics/{DATE}.json から followers を読み、logs/ops/follower_log.jsonl に追記する
-- メトリクス未取得の日はスキップする（❌にしない）
-- 前日比も算出して出力する
-
-## ステータス記号
-- ✅ 設定済み — 導線が機能している
-- ⚠️ 準備中/未整備 — 依存する仕組みがまだ整っていない
-- ❌ 未設定 — 対応すべき不備がある
-
-## 出力フォーマット（必ずこの形式で出力すること）
-
-# note導線チェック — {DATE}
-
-| 項目 | 状態 | 詳細 |
-|------|------|------|
-| マガジン追加 | （✅/⚠️/❌） | （1文） |
-| note末尾フォローCTA | （✅/⚠️/❌） | （1文） |
-| プロフィール固定記事 | （✅/⚠️/❌） | （1文） |
-| フォロワー数記録 | （✅/⚠️/❌） | （1文） |
-
-## 総合評価
-**整備率**: X / 4 項目
-**フェーズ**: （リスト構築前 / リスト構築中 / リスト活用可能）
-
-## 今日やること（最優先1つだけ）
-**タスク**: （未設定のうち最も優先すべき1項目の具体的なアクション）
-**所要時間**: （5分 / 15分 / 1時間など）
-**完了条件**: （何ができたら完了か1文）
-
-## メモ
-（今日のフォロワー推移や導線状況で気づいたこと。なければ省略）
-"""
-
 
 def _magazine_names(magazines) -> set:
     """config/magazines.json の値から誌名の集合を作る（スキーマ不定に備えて防御的に解釈）"""
@@ -142,7 +90,7 @@ def read_follower_log() -> list[dict]:
 
 
 def check_followers(today: date) -> tuple[str, str, int | None]:
-    """当日のfollowers数を読み取り、前日比を算出する。(status, detail, followers) を返す。
+    """当日のfollowers数を読み取り、前回記録比を算出する。(status, detail, followers) を返す。
     ここではログへの書き込みは行わない（副作用なし）。"""
     ds = str(today)
     metrics_file = SODA_DIR / "logs" / "metrics" / f"{ds}.json"
@@ -167,7 +115,7 @@ def check_followers(today: date) -> tuple[str, str, int | None]:
         prev_followers = by_date[prev_date]
         diff = followers - prev_followers
         sign = "+" if diff >= 0 else ""
-        detail = f"{followers}人（前日比 {sign}{diff}、{prev_date}比較）"
+        detail = f"{followers}人（前回記録比 {sign}{diff}、{prev_date}比較）"
     else:
         detail = f"{followers}人（比較データなし、記録開始）"
 
@@ -183,39 +131,6 @@ def append_follower_log(today: date, followers: int) -> None:
     FOLLOWER_LOG.parent.mkdir(parents=True, exist_ok=True)
     with FOLLOWER_LOG.open("a") as f:
         f.write(json.dumps({"date": ds, "followers": followers}, ensure_ascii=False) + "\n")
-
-
-def build_prompt(today: date) -> str:
-    ds = str(today)
-    magazine_status, magazine_detail = check_magazine(today)
-    note_cta_status, note_cta_detail = check_note_follow_cta(today)
-    followers_status, followers_detail, _ = check_followers(today)
-
-    lines = [
-        CHECK_PROMPT.replace("{DATE}", ds),
-        "",
-        "---",
-        f"## 事前チェック結果（スクリプトによる自動確認）",
-        "",
-        f"- マガジン追加: {magazine_status}（{magazine_detail}）",
-        f"- note末尾フォローCTA: {note_cta_status}（{note_cta_detail}）",
-        f"- フォロワー数記録: {followers_status}（{followers_detail}）",
-        "",
-        "## 読み込むファイル",
-        "- docs/funnel_status.md（プロフィール固定記事の状態確認）",
-        "- config/magazines.json（マガジン一覧）",
-        f"- logs/daily/{ds}_magazine.txt（今日のマガジン記録）",
-        f"- logs/metrics/{ds}.json（フォロワー数）",
-        "",
-        "## 実行手順",
-        "1. docs/funnel_status.md を Read toolで読む",
-        "2. 上記の事前チェック結果と合わせて4項目を評価する",
-        f"3. 出力フォーマットに従って logs/daily/{ds}_list_check.md を Write toolで保存する",
-        "4. docs/funnel_status.md の「更新ログ」末尾に今日の確認日時を1行追記する（Edit tool）",
-        "5. 保存完了後は「導線チェック完了: X/4項目」と出力して終了すること",
-    ]
-
-    return "\n".join(lines)
 
 
 ACTIONS = {
@@ -319,6 +234,12 @@ def main():
 
     check_file.write_text(report)
     log_file.write_text(f"[{today}] 導線チェック完了: {ok_count}/4項目\n{report}")
+
+    # 未達（❌）項目があれば通知する（⚠️=準備中・スキップは通知しない）
+    ng_items = [k for k, v in items.items() if v == "❌"]
+    if ng_items:
+        from soda_utils import notify_error
+        notify_error("note導線チェック", f"未達: {'、'.join(ng_items)}（{ok_count}/4項目）。対応: {priority_action}")
 
     # funnel_status.md の更新ログに追記
     if FUNNEL_STATUS.exists():

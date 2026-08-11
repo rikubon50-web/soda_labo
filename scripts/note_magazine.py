@@ -76,12 +76,12 @@ SEL_MAGAZINE_NAME_INPUT     = "#name"
 SEL_MAGAZINE_DESC_TEXTAREA  = "#description"
 SEL_MAGAZINE_CREATE_BUTTON  = 'button:has-text("作成")'
 
-# 未検証（--dry-run のロジック確認のみ。実UI操作は Task 7 の本番実行で初めて実測する。
-# UIが想定と異なる場合はここを更新すること）
+# 検証済み（2026-08-11 本番実測: バックフィル110件成功+プロフィール更新成功で実証。
+# UIが変わって失敗するようになったらここを実物に合わせて更新すること）
 SEL_PROFILE_BIO_TEXTAREA    = 'textarea[name="editBiography"]'
 SEL_PROFILE_SAVE_BUTTON     = 'button:has-text("保存")'
 SEL_NOTE_MAGAZINE_ADD_ICON  = '[aria-label="記事を追加"]'
-SEL_MAGAZINE_MODAL_CONTAINER = '[role="dialog"]'  # マガジン選択モーダルのコンテナ（想定。未検証）
+SEL_MAGAZINE_MODAL_CONTAINER = '[role="dialog"]'  # マガジン選択モーダルのコンテナ（実測済み）
 
 
 # ─── 共通ヘルパー ──────────────────────────────────────────────────────
