@@ -2,6 +2,7 @@
 """
 投稿分析スクリプト（毎朝8:45）
 前日公開したnote記事を4観点で分析し、「伸びた理由」「弱かった理由」を記録する。
+メトリクスは前夜22:30の note_metrics.py が保存した logs/metrics/ を読む（この工程では取得しない）。
 使い方:
   python3 scripts/run_post_analysis.py          # 実行
   python3 scripts/run_post_analysis.py --dry-run  # プロンプトだけ表示
@@ -9,11 +10,10 @@
 
 import argparse
 import json
-import subprocess
 from datetime import date, timedelta
 from pathlib import Path
 
-from soda_utils import SODA_DIR, CLAUDE, PYTHON, run_claude, notify_error
+from soda_utils import SODA_DIR, CLAUDE, run_claude, notify_error
 
 ANALYSIS_PROMPT = """\
 あなたはnoteメディア「SODA」の記事アナリストです。
@@ -52,23 +52,6 @@ ANALYSIS_PROMPT = """\
 ## 明日への仮説
 （明日の記事で試すべき1点。1〜2文）
 """
-
-
-def refresh_metrics() -> bool:
-    """前日のメトリクスを最新値に更新する（失敗しても続行）"""
-    try:
-        result = subprocess.run(
-            [PYTHON, str(SODA_DIR / "scripts" / "note_metrics.py")],
-            cwd=str(SODA_DIR),
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
-        print(result.stdout.strip())
-        return result.returncode == 0
-    except Exception as e:
-        print(f"メトリクス再取得スキップ（{e}）")
-        return False
 
 
 def collect_yesterday_data() -> dict:
@@ -192,14 +175,9 @@ def build_prompt(data: dict, today: date) -> str:
 def main():
     parser = argparse.ArgumentParser(description="SODA投稿分析スクリプト")
     parser.add_argument("--dry-run", action="store_true", help="プロンプトだけ表示")
-    parser.add_argument("--no-refresh", action="store_true", help="メトリクス再取得をスキップ")
     args = parser.parse_args()
 
     today = date.today()
-
-    if not args.dry_run and not args.no_refresh:
-        print("メトリクスを再取得中...")
-        refresh_metrics()
 
     data = collect_yesterday_data()
     prompt = build_prompt(data, today)
