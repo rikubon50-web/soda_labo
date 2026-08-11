@@ -154,6 +154,12 @@ docs/perspectives.md を更新して上書き保存する。
 - 今日の記事で回収（答え合わせ）した仮説があれば、結果（当たり/外れ/部分的）を添えて「回収済みアーカイブ」へ移動する
 - 「ウォッチ中の仮説」が15件を超える場合は、古い・弱いものからアーカイブへ移す
 
+## Step 7.6: 本日記事のマガジン判定
+本日のnote記事を以下の3誌のうち最も主題が近い1誌に判定し、誌名のみ（1行）を logs/daily/{ds}_magazine.txt に保存する。
+- AIとマネーの定点観測（投資・M&A・資金調達・企業価値）
+- AIと雇用のゆくえ（レイオフ・働き方・スキル・組織）
+- AI業界の構造転換（企業戦略・競争・規制・技術転換）
+
 ## 全体ルール
 - 全テキストは日本語
 - ユーザーへの確認は不要。CEOがすべての判断を行う
@@ -208,6 +214,23 @@ def run_note_post(note_file: Path, run_log: Path) -> bool:
         return True
     except Exception as e:
         _notify_error(step, str(e), run_log)
+        return False
+
+
+def run_magazine_add(run_log: Path) -> bool:
+    """当日記事をマガジンに追加する。失敗しても続行。"""
+    try:
+        r = subprocess.run(
+            [PYTHON_BIN, str(SCRIPTS_DIR / "note_magazine.py"), "--add-today"],
+            capture_output=True, text=True, timeout=120, cwd=str(SODA_DIR),
+        )
+        _log_append(run_log, r.stdout + r.stderr)
+        if r.returncode != 0:
+            _notify_error("マガジン追加", r.stderr[-300:] or "詳細不明", run_log)
+            return False
+        return True
+    except Exception as e:
+        _notify_error("マガジン追加", str(e), run_log)
         return False
 
 
@@ -295,7 +318,9 @@ def main() -> int:
     # ─ note投稿 ──────────────────────────────────────────────────
     if note_files:
         _log.info(f"note投稿: {note_files[0].name}")
-        run_note_post(note_files[0], run_log)
+        if run_note_post(note_files[0], run_log):
+            _log.info("マガジン追加")
+            run_magazine_add(run_log)
     else:
         _notify_error("note記事ファイル未作成", f"content/note/{ds}_*.md が存在しません")
         _log.warning("note記事ファイルが見つかりません")
