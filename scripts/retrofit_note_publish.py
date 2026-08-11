@@ -3,8 +3,7 @@
 note.com 公開記事の本文を一括再ペーストして CTA を更新する。
 
 前提：
-  scripts/retrofit_note_cta.py を先に実行して
-  ローカル content/note/*.md を新 CTA に書換済みであること。
+  ローカル content/note/*.md が公開したい内容に更新済みであること。
 
 このスクリプトは：
   1. logs/daily/YYYY-MM-DD_note_url.txt から各記事の公開URLを取得
