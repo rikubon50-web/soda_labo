@@ -11,10 +11,8 @@ SODA 全Agent会議スクリプト
 import argparse
 import json
 from datetime import date, timedelta
-from pathlib import Path
 
 from soda_utils import SODA_DIR, run_claude, notify_error, write_content_mode
-from shows import get_scheduled_shows, get_show
 
 MEETING_FORMAT = """
 # 会議の目的
@@ -292,26 +290,11 @@ def build_prompt(data: dict, today: date) -> str:
     lines.append("\n---")
     lines.append(MEETING_FORMAT.replace("{DATE}", str(today)))
 
-    # 今日が配信日のショーの会議指示を動的に追加
-    for show_id in get_scheduled_shows(today.weekday()):
-        show = get_show(show_id)
-        if hasattr(show, "MEETING_INSTRUCTIONS"):
-            lines.append(show.MEETING_INSTRUCTIONS)
-
     return "\n".join(lines)
 
 
-def _write_mode_from_meeting(meeting_file: Path, today: date) -> None:
-    """会議ログを解析してコンテンツモードファイルを書き込む。"""
-    content = meeting_file.read_text()
-    for show_id in get_scheduled_shows(today.weekday()):
-        show = get_show(show_id)
-        if hasattr(show, "parse_meeting_decision"):
-            decision = show.parse_meeting_decision(content)
-            if decision:
-                write_content_mode(show_id, **decision)
-                print(f"コンテンツモード: {show_id} / {decision}")
-                return
+def _write_mode_from_meeting() -> None:
+    """コンテンツモードファイルを書き込む（ショー機構は撤去済みのため常にnormal）。"""
     write_content_mode("normal")
 
 
@@ -346,7 +329,7 @@ def main() -> None:
     meeting_file = meeting_dir / f"{today}_meeting.md"
     if meeting_file.exists():
         print(f"会議まとめ保存完了: {meeting_file}")
-        _write_mode_from_meeting(meeting_file, today)
+        _write_mode_from_meeting()
     else:
         print("警告: 会議ファイルが作成されませんでした")
         write_content_mode("normal")
