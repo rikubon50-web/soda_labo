@@ -69,6 +69,19 @@ agents/researcher.md を読み、Step 1でCEOが採用したテーマ1本を深�
     step4_note = ""
     step76_override = None
 
+    # 平日デフォルト: Step 1のニュース起点テーマ選定の2行
+    step1_theme_lines = """**Step 0で取得した最新ニュースから「AI×お金・雇用・構造転換」3テーマに該当するもの1本を最優先のテーマ候補として選ぶこと（基準は agents/ceo.md「テーマ方針」参照）。**
+**該当ニュースがない場合は過去3〜7日から「今振り返ると」型で1本選ぶ。**
+"""
+    # 平日デフォルト: Step 4の取材ノート限定ルール
+    step4_research_line = f"""**note記事の事実・数字は content/news/{ds}_research.md（取材ノート）に記載のあるものだけを使うこと。ノートにない数字は書かない。「未確認事項」の内容は本文でも未確認・報道ベースと明示する。取材ノートが存在しない場合のみStep 0の検索結果ベースで執筆してよい。**
+"""
+    # 平日デフォルト: Step 4のnote記事テーマ選定の説明
+    step4_note_desc = """  「AI×お金・雇用・構造転換」3テーマ該当ニュースの深掘り1本（agents/writer.md「note記事のジャンル方針」参照）。
+  該当ニュースが当日になければ過去3〜7日から「今振り返ると」型で1本選ぶ。"""
+    # 平日デフォルト: Step 4の短尺動画台本の説明
+    step4_video_line = "  当日 note 記事と同じニュースを冒頭3秒インパクト型で 30〜45秒に圧縮。"
+
     if wd == 5:
         # 土曜: 週間まとめモード
         step0_news = """## Step 0: 今週の記事の読み込み（土曜まとめモード）
@@ -78,6 +91,10 @@ agents/researcher.md を読み、Step 1でCEOが採用したテーマ1本を深�
         step15_research = ""
         step1_note = "\n**本日は土曜まとめモード。個別ニュースの再掲ではなく、今週の5本を貫く「1週間の論点」を1つ立てること（例:「◯◯と◯◯が同時に動いた1週間」型の編集見出し）。docs/perspectives.md の仮説がこの1週間でどう動いたかも論点候補にする。**"
         step4_note = "\n**土曜まとめ記事の要件: タイトルに週の論点を立てる（個別ニュース名の羅列にしない）/ 今週の各記事への内部リンクをStep 0で取得したURLで張る / perspectives.md の伏線の進捗に触れる / 記事冒頭に約50字のリード文を置く。**"
+        step1_theme_lines = ""
+        step4_research_line = ""
+        step4_note_desc = "  今週の5本を貫く週間構造まとめ1本（Step 0で読み込んだ今週のnote記事とperspectives.mdの仮説進捗をもとに、Step 1で立てた「1週間の論点」を軸に構成する）。"
+        step4_video_line = "  当日 note 記事と同じテーマを冒頭3秒インパクト型で30〜45秒に圧縮。"
     elif wd == 6:
         # 日曜: 運営実録モード
         step0_news = """## Step 0: 運営データの読み込み（日曜実録モード）
@@ -91,6 +108,10 @@ agents/researcher.md を読み、Step 1でCEOが採用したテーマ1本を深�
         step4_note = "\n**日曜実録記事の要件: 三点セット構成（数字→変更と理由→読者向け再現手順）を見出しで明示する / 数字には出どころ（自動収集の仕組み）を一言添える / 検証できない主張・誇張をしない / 数字の羅列だけで終わらせず、必ず「読者が自分の発信・AI活用に適用する具体手順」で締める / 記事冒頭に約50字のリード文を置く。**"
         step76_override = f"""## Step 7.6: 本日記事のマガジン判定
 本日は実録記事のため、判定不要。logs/daily/{ds}_magazine.txt に「SODA運営実録 — AI全自動メディアの数字と中身」と1行保存する。"""
+        step1_theme_lines = ""
+        step4_research_line = ""
+        step4_note_desc = "  SODA運営の週次実録1本（三点セット構成: ①今週の数字 ②何を変えたか・なぜか ③読者が真似する場合の再現手順。Step 0で読み込んだ運営データをもとに執筆する）。"
+        step4_video_line = "  当日 note 記事と同じテーマを冒頭3秒インパクト型で30〜45秒に圧縮。"
 
     step15_block = f"\n\n{step15_research}" if step15_research else ""
 
@@ -122,9 +143,7 @@ agents/researcher.md を読み、Step 1でCEOが採用したテーマ1本を深�
 
 ## Step 1: CEO — 本日の優先テーマ決定
 agents/ceo.md を読み、CEOとして本日の優先テーマを決定する。
-**Step 0で取得した最新ニュースから「AI×お金・雇用・構造転換」3テーマに該当するもの1本を最優先のテーマ候補として選ぶこと（基準は agents/ceo.md「テーマ方針」参照）。**
-**該当ニュースがない場合は過去3〜7日から「今振り返ると」型で1本選ぶ。**
-**朝会議ログ（logs/meeting/{ds}_meeting.md）のCEO最終判断・Writerへの指示を最優先で参照すること。**
+{step1_theme_lines}**朝会議ログ（logs/meeting/{ds}_meeting.md）のCEO最終判断・Writerへの指示を最優先で参照すること。**
 **docs/perspectives.md の「ウォッチ中の仮説」に回収予定時期が到来したものがあれば、その回収をその日のテーマ候補として最優先で検討すること。**
 出力形式: agents/ceo.md の「優先テーマを出すとき」フォーマット。{step1_note}{step15_block}
 
@@ -141,16 +160,14 @@ agents/writer.md を読み、採用企画をもとに以下を下書きしてフ
 **昨日の投稿分析（post_analysis）で反応が高かった表現・フック・構成を参考にすること。**
 **アイデア資産（ideas）に使えるネタ・切り口があれば積極的に取り込むこと。**
 **朝会議ログのWriterへの指示がある場合は必ず従うこと。**
-**note記事の事実・数字は content/news/{ds}_research.md（取材ノート）に記載のあるものだけを使うこと。ノートにない数字は書かない。「未確認事項」の内容は本文でも未確認・報道ベースと明示する。取材ノートが存在しない場合のみStep 0の検索結果ベースで執筆してよい。**
-**docs/perspectives.md を読み、接続できる持論・伏線があれば本文で明示的に接続すること（agents/writer.md「SODA視点の接続ルール」参照）。**{step4_note}
+{step4_research_line}**docs/perspectives.md を読み、接続できる持論・伏線があれば本文で明示的に接続すること（agents/writer.md「SODA視点の接続ルール」参照）。**{step4_note}
 
 - note記事 → content/note/{ds}_[タイトル略称].md
-  「AI×お金・雇用・構造転換」3テーマ該当ニュースの深掘り1本（agents/writer.md「note記事のジャンル方針」参照）。
-  該当ニュースが当日になければ過去3〜7日から「今振り返ると」型で1本選ぶ。
+{step4_note_desc}
   記事末尾に agents/writer.md の「note記事ハッシュタグルール」に従い #タグ を5つ付与する。
 
 - 短尺動画台本 → content/short_videos/{ds}_[タイトル略称].md
-  当日 note 記事と同じニュースを冒頭3秒インパクト型で 30〜45秒に圧縮。
+{step4_video_line}
 
 AI それって本当？／Day N シリーズは新規生成しない。
 
