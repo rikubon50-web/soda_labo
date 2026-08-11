@@ -157,28 +157,32 @@ def fetch_magazines(page) -> list[dict]:
 
 
 def _select_magazine_in_modal(page, magazine_name: str, dump_tag: str) -> None:
-    """「記事を追加」アイコンクリック後に開くマガジン選択モーダルから対象マガジン名をクリックする。
+    """「記事を追加」アイコンクリック後に開くマガジン選択モーダルで対象誌の「追加」ボタンを押す。
 
-    マガジン選択モーダルのコンテナ内に絞って探す（ページ全体からのtext検索は
-    同名テキストが他所にあった場合の誤クリックの恐れがあるため避ける）。
-    SEL_MAGAZINE_MODAL_CONTAINER は未検証のため、コンテナ自体が見つからない場合のみ
-    「モーダルらしき最前面要素が特定できない」とみなし、従来のページ全体検索を
-    最終フォールバックとして使う（コンテナは見つかったが中に対象が無い場合は
-    フォールバックしない＝誤クリックリスクを避ける）。
+    実DOM（2026-08-11実測）: モーダル内の各マガジン行は `.o-magazineListItem` で、
+    行の全面に `a[aria-label="誌名"]`（マガジンページへのリンク）が被さっており、
+    行内に別途「追加」ボタン（.a-button、テキスト"追加"）がある。
+    誌名テキストをクリックすると全面リンクに阻まれる（pointer events intercept）ため、
+    「誌名のリンクを含む行」を特定し、その行の「追加」ボタンをクリックする。
 
     add_today() と note_backfill_magazines.py の両方から呼ばれる共通ロジック。
     見つからなければ失敗ダンプ後にRuntimeErrorを投げる（呼び出し側でハンドリングする）。
     """
-    modal = page.query_selector(SEL_MAGAZINE_MODAL_CONTAINER)
-    scope = modal if modal else page
-    target = scope.query_selector(f'text="{magazine_name}"')
-    if not target and modal is None:
-        # モーダルコンテナ自体が想定と違う場合の最終フォールバック（誤検出リスクは残る）
-        target = page.query_selector(f'text="{magazine_name}"')
-    if not target:
+    row_sel = f'.o-magazineListItem:has(a[aria-label="{magazine_name}"])'
+    add_btn = page.query_selector(f'{row_sel} button:has-text("追加")')
+    if not add_btn:
+        # 行構造が変わった場合の保険: ダイアログ内で誌名リンクの近傍ボタンを探す
+        modal = page.query_selector(SEL_MAGAZINE_MODAL_CONTAINER)
+        if modal:
+            link = modal.query_selector(f'a[aria-label="{magazine_name}"]')
+            if link:
+                add_btn = link.evaluate_handle(
+                    'el => el.closest(".o-magazineListItem")?.querySelector("button")'
+                ).as_element()
+    if not add_btn:
         _dump_failure(page, dump_tag)
-        raise RuntimeError(f"マガジン選択モーダルに '{magazine_name}' が見つかりません")
-    target.click()
+        raise RuntimeError(f"マガジン選択モーダルに '{magazine_name}' の追加ボタンが見つかりません")
+    add_btn.click()
 
 
 def _load_config() -> dict:
