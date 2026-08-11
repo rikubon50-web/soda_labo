@@ -70,13 +70,18 @@ FALLBACK_RULES = [  # (キーワード群, 誌名)。上から順に判定
 ]
 DEFAULT_MAGAZINE = "AI業界の構造転換"
 
-# ─── UI自動化セレクタ（--discover と手動DOM確認で判明した実物。UI変更時はここを更新する）───
-SEL_MAGAZINE_NAME_INPUT    = "#name"
-SEL_MAGAZINE_DESC_TEXTAREA = "#description"
-SEL_MAGAZINE_CREATE_BUTTON = 'button:has-text("作成")'
-SEL_PROFILE_BIO_TEXTAREA   = 'textarea[name="editBiography"]'
-SEL_PROFILE_SAVE_BUTTON    = 'button:has-text("保存")'
-SEL_NOTE_MAGAZINE_ADD_ICON = '[aria-label="記事を追加"]'
+# ─── UI自動化セレクタ ──────────────────────────────────────────────────
+# 検証済み（3誌作成の本番実行で実測・動作確認済み。2026-08-11時点）
+SEL_MAGAZINE_NAME_INPUT     = "#name"
+SEL_MAGAZINE_DESC_TEXTAREA  = "#description"
+SEL_MAGAZINE_CREATE_BUTTON  = 'button:has-text("作成")'
+
+# 未検証（--dry-run のロジック確認のみ。実UI操作は Task 7 の本番実行で初めて実測する。
+# UIが想定と異なる場合はここを更新すること）
+SEL_PROFILE_BIO_TEXTAREA    = 'textarea[name="editBiography"]'
+SEL_PROFILE_SAVE_BUTTON     = 'button:has-text("保存")'
+SEL_NOTE_MAGAZINE_ADD_ICON  = '[aria-label="記事を追加"]'
+SEL_MAGAZINE_MODAL_CONTAINER = '[role="dialog"]'  # マガジン選択モーダルのコンテナ（想定。未検証）
 
 
 # ─── 共通ヘルパー ──────────────────────────────────────────────────────
@@ -363,25 +368,48 @@ def add_today(ctx, dry_run: bool) -> None:
     add_icon.click()
     page.wait_for_timeout(1500)
 
-    target = page.query_selector(f'text="{magazine_name}"')
+    # マガジン選択モーダルのコンテナ内に絞って探す（ページ全体からのtext検索は
+    # 同名テキストが他所にあった場合の誤クリックの恐れがあるため避ける）。
+    # SEL_MAGAZINE_MODAL_CONTAINER は未検証のため、見つからない場合は
+    # 「モーダルらしき最前面要素」にフォールバックしてから、それでも
+    # 見つからなければ従来のページ全体検索を最終フォールバックとして使う。
+    modal = page.query_selector(SEL_MAGAZINE_MODAL_CONTAINER)
+    scope = modal if modal else page
+    target = scope.query_selector(f'text="{magazine_name}"')
+    if not target and modal is None:
+        # モーダルコンテナ自体が想定と違う場合の最終フォールバック（誤検出リスクは残る）
+        target = page.query_selector(f'text="{magazine_name}"')
     if not target:
         _dump_failure(page, "magazine_modal_target_not_found")
         raise RuntimeError(f"マガジン選択モーダルに '{magazine_name}' が見つかりません")
     target.click()
     page.wait_for_timeout(2000)
 
-    # 検証: 記事詳細APIの belonging_magazine_keys に対象keyが含まれるか確認
-    resp = page.goto(f"https://note.com/api/v3/notes/{note_key}", wait_until="domcontentloaded", timeout=20000)
-    if resp is None or resp.status != 200:
-        _dump_failure(page, "magazine_add_verify_fetch_failed")
-        raise RuntimeError(f"追加後の検証取得に失敗: status={resp.status if resp else '不明'}")
-    body = page.evaluate("() => document.body.innerText")
-    raw = json.loads(body)
-    belonging = raw.get("data", {}).get("belonging_magazine_keys", [])
-    if magazine_key not in belonging:
-        _dump_failure(page, "magazine_add_verify_failed")
-        raise RuntimeError(f"追加後の検証に失敗（belonging_magazine_keys={belonging}）")
-    print(f"追加完了・検証OK: {note_key} → {magazine_name}（key={magazine_key}）")
+    # 検証: 記事詳細APIの belonging_magazine_keys に対象keyが含まれるか確認する。
+    # ★fail-soft: この検証API（GET /api/v3/notes/{key}）は未実測（仮説）であり、
+    # レスポンス形式やフィールド名が違っていた場合に「追加自体は成功しているのに
+    # 検証失敗でexit 1・notify_error誤発火」となるリスクが高い。そのため検証失敗は
+    # 例外にせず警告ログに留め、exit codeは追加操作（クリックまで）の成否のみで決める。
+    # 検証APIの実物確認結果は Task 7 の本番実行時にレポートへ追記する前提。
+    try:
+        resp = page.goto(f"https://note.com/api/v3/notes/{note_key}", wait_until="domcontentloaded", timeout=20000)
+        if resp is None or resp.status != 200:
+            print(f"WARN: 追加後の検証取得に失敗（追加自体は実行済み）: status={resp.status if resp else '不明'}")
+        else:
+            body = page.evaluate("() => document.body.innerText")
+            raw = json.loads(body)
+            belonging = raw.get("data", {}).get("belonging_magazine_keys", [])
+            if magazine_key not in belonging:
+                print(
+                    f"WARN: 追加後の検証に失敗（追加自体は実行済み。要目視確認）: "
+                    f"belonging_magazine_keys={belonging}, expected_key={magazine_key}"
+                )
+            else:
+                print(f"検証OK: belonging_magazine_keysに{magazine_key}を確認")
+    except Exception as e:
+        print(f"WARN: 追加後の検証中に例外が発生（追加自体は実行済み。要目視確認）: {e}")
+
+    print(f"追加完了: {note_key} → {magazine_name}（key={magazine_key}）")
 
 
 # ─── --update-profile ──────────────────────────────────────────────────
