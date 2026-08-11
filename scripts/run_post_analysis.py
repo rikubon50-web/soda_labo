@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 投稿分析スクリプト（毎朝8:45）
-前日のX投稿を5観点で分析し、「伸びた理由」「弱かった理由」を記録する。
+前日公開したnote記事を4観点で分析し、「伸びた理由」「弱かった理由」を記録する。
 使い方:
   python3 scripts/run_post_analysis.py          # 実行
   python3 scripts/run_post_analysis.py --dry-run  # プロンプトだけ表示
@@ -16,42 +16,41 @@ from pathlib import Path
 from soda_utils import SODA_DIR, CLAUDE, PYTHON, run_claude, notify_error
 
 ANALYSIS_PROMPT = """\
-あなたはXアカウント「SODA」の投稿データアナリストです。
-以下の前日データを分析し、指定の出力フォーマットで結果を書き出してください。
+あなたはnoteメディア「SODA」の記事アナリストです。
+以下のデータを分析し、指定の出力フォーマットで結果を書き出してください。
 分析は事実・数値に基づき、感想ではなく原因の仮説を書くこと。
 
-## 分析の5観点
+## 分析の4観点
 
-1. **インプレッション** — 各投稿のIMP数。朝・昼・夜でどれが多いか。
-2. **保存されやすい型** — ブックマーク数が多い投稿の文体・構造の特徴。
-3. **返信がつくテーマ** — リプライ数が多い投稿のトピックと書き方の特徴。
-4. **クリックされた導線** — 夜投稿（note URL付き）のIMP・エンゲージメントから推定。
-5. **noteに飛んだ投稿の特徴** — 夜投稿の内容・CTAの書き方と反応の関係。
+1. **読まれ方** — 昨日公開した記事のビュー数。直近7日の他記事と比べて多いか少ないか。
+2. **スキ率** — スキ数÷ビュー数。高い記事・低い記事の内容の違い。
+3. **伸びるテーマ** — 直近7日でビューが多い記事に共通するテーマ・切り口。
+4. **フックの効き** — タイトルと冒頭300字が読者を掴めているか（内容とビューの関係から推定）。
+
+メトリクスが未取得の日は、記事の内容（テーマ・構成・フック・視点接続）の定性評価に切り替えること。
 
 ## 出力フォーマット（必ずこの形式で出力すること）
 
-# SODA 投稿分析 — {DATE}
+# SODA 記事分析 — {DATE}
 
 ## 数値サマリー
-| 投稿 | IMP | いいね | RT | 返信 | ブックマーク |
-|------|-----|--------|-----|------|------------|
-| 朝（1本目） | - | - | - | - | - |
-| 昼（2本目） | - | - | - | - | - |
-| 夜（3本目） | - | - | - | - | - |
+| 記事 | ビュー | スキ | コメント | スキ率 |
+|------|--------|------|----------|--------|
+| 昨日の記事 | - | - | - | - |
+| 直近7日平均 | - | - | - | - |
 
-## 5観点の分析
-1. **インプレッション**: （観察と仮説を1〜2文）
-2. **保存されやすい型**: （観察と仮説を1〜2文。データがなければ「不明」と書く）
-3. **返信がつくテーマ**: （観察と仮説を1〜2文）
-4. **クリックされた導線**: （夜投稿のデータから推定。1〜2文）
-5. **noteに飛んだ投稿の特徴**: （CTA・内容から推定。1〜2文）
+## 4観点の分析
+1. **読まれ方**: （観察と仮説を1〜2文）
+2. **スキ率**: （観察と仮説を1〜2文。データがなければ「不明」と書く）
+3. **伸びるテーマ**: （観察と仮説を1〜2文）
+4. **フックの効き**: （観察と仮説を1〜2文）
 
 ## 結論
 **昨日伸びた理由**: （1行で。なければ「データ不足」と書く）
 **昨日弱かった理由**: （1行で。なければ「データ不足」と書く）
 
 ## 明日への仮説
-（今日の投稿で試すべき1点。1〜2文）
+（明日の記事で試すべき1点。1〜2文）
 """
 
 
@@ -59,11 +58,11 @@ def refresh_metrics() -> bool:
     """前日のメトリクスを最新値に更新する（失敗しても続行）"""
     try:
         result = subprocess.run(
-            [PYTHON, str(SODA_DIR / "scripts" / "fetch_metrics.py"), "--days", "2"],
+            [PYTHON, str(SODA_DIR / "scripts" / "note_metrics.py")],
             cwd=str(SODA_DIR),
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=120,
         )
         print(result.stdout.strip())
         return result.returncode == 0
@@ -77,15 +76,25 @@ def collect_yesterday_data() -> dict:
     ds = str(yesterday)
     data: dict = {"date": ds}
 
-    # Xメトリクス
-    metrics_file = SODA_DIR / "logs" / "metrics" / f"{ds}.json"
-    data["metrics"] = json.loads(metrics_file.read_text()) if metrics_file.exists() else []
+    # noteメトリクス（当日取得分＝最新値。過去7日分も推移用に集める）
+    metrics = []
+    for i in range(8):
+        d = date.today() - timedelta(days=i)
+        f = SODA_DIR / "logs" / "metrics" / f"{d}.json"
+        if f.exists():
+            try:
+                j = json.loads(f.read_text())
+                if j.get("source") == "note":
+                    metrics.append(j)
+            except (json.JSONDecodeError, KeyError):
+                pass
+    data["metrics"] = metrics
 
-    # X投稿本文
-    x_files = sorted((SODA_DIR / "content" / "x_posts").glob(f"{ds}_*.md"))
-    data["x_content"] = x_files[0].read_text() if x_files else ""
+    # 昨日のnote記事本文
+    note_files = sorted((SODA_DIR / "content" / "note").glob(f"{ds}_*.md"))
+    data["note_content"] = note_files[0].read_text() if note_files else ""
 
-    # note URL（夜投稿にURLが付いたか確認用）
+    # note公開URL
     note_url_file = SODA_DIR / "logs" / "daily" / f"{ds}_note_url.txt"
     data["note_url"] = note_url_file.read_text().strip() if note_url_file.exists() else ""
 
@@ -102,41 +111,36 @@ def build_prompt(data: dict, today: date) -> str:
         "",
     ]
 
-    # メトリクス詳細
+    # メトリクス詳細（直近8日分のnoteメトリクス推移）
     if data["metrics"]:
-        lines.append("### Xメトリクス（数値）")
-        for m in sorted(data["metrics"], key=lambda x: x.get("post_number", 0)):
-            met = m.get("metrics") or {}
-            label = ["朝", "昼", "夜"][m.get("post_number", 1) - 1] if m.get("post_number") else "?"
-            lines.append(
-                f"- {label}（{m.get('post_number')}本目）: "
-                f"IMP:{met.get('impressions', '?')} "
-                f"いいね:{met.get('likes', '?')} "
-                f"RT:{met.get('retweets', '?')} "
-                f"引用:{met.get('quotes', '?')} "
-                f"返信:{met.get('replies', '?')} "
-                f"ブックマーク:{met.get('bookmarks', '?')} "
-                f"リンククリック:{met.get('url_clicks', '?')} "
-                f"プロフ流入:{met.get('profile_clicks', '?')}"
-            )
-            lines.append(f"  本文: {m.get('text', '')[:80]}")
+        lines.append("### noteメトリクス（直近8日分の推移、日付降順）")
+        for m in sorted(data["metrics"], key=lambda x: x.get("date", ""), reverse=True):
+            articles = m.get("articles") or []
+            lines.append(f"- {m.get('date')}（{len(articles)}記事）")
+            for a in sorted(articles, key=lambda x: x.get("views", 0), reverse=True):
+                lines.append(
+                    f"  - ビュー:{a.get('views', '?')} "
+                    f"スキ:{a.get('likes', '?')} "
+                    f"コメント:{a.get('comments', '?')} "
+                    f"— {a.get('title', '')}"
+                )
     else:
-        lines.append("### Xメトリクス\n（データなし — 定性分析のみ実施）")
+        lines.append("### noteメトリクス\n（データなし — 定性分析のみ実施）")
 
     lines.append("")
 
-    # 投稿本文
-    if data["x_content"]:
-        lines.append("### X投稿本文")
-        lines.append(data["x_content"])
+    # 記事本文
+    if data["note_content"]:
+        lines.append("### 昨日公開したnote記事")
+        lines.append(data["note_content"])
     else:
-        lines.append("### X投稿本文\n（なし）")
+        lines.append("### 昨日公開したnote記事\n（なし）")
 
     # note URL
     if data["note_url"]:
-        lines.append(f"\n### 夜投稿に付いたnote URL\n{data['note_url']}")
+        lines.append(f"\n### 昨日のnote公開URL\n{data['note_url']}")
     else:
-        lines.append("\n### 夜投稿のnote URL\n（なし）")
+        lines.append("\n### 昨日のnote公開URL\n（なし）")
 
     lines.append("")
     lines.append(
