@@ -227,6 +227,10 @@ def run_fetch_metrics(run_log: Path) -> bool:
 
 # ─── ショーモード ───────────────────────────────────────────────────
 
+# 新規制作を停止したショーID（ceo.mdの方針変更に従い追加する）
+STOPPED_SHOWS: set[str] = {"aitsm"}
+
+
 def get_show_mode(today: date) -> tuple[str, str]:
     """コンテンツモードファイルから (mode, theme) を返す。"""
     mode_file = DAILY_LOG_DIR / f"{today.isoformat()}_content_mode.json"
@@ -311,7 +315,9 @@ def main() -> int:
     x_files = sorted(X_POSTS_DIR.glob(f"{ds}_*.md"))
 
     if show_mode != "normal" and show_mode and show_theme:
-        if x_files:
+        if show_mode in STOPPED_SHOWS:
+            _log.info(f"ショー停止中のためスキップ: {show_mode}（通常パイプラインで継続）")
+        elif x_files:
             _log.info(f"ショーファイル生成済みのためスキップ: {show_mode}")
         else:
             _log.info(f"ショーモード: {show_mode} / テーマ: {show_theme}")
