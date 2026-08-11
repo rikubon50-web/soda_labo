@@ -62,7 +62,7 @@ def collect_week_data(days: int = 7) -> dict:
     return data
 
 
-def build_prompt(data: dict) -> str:
+def build_prompt(data: dict, days: int = 7) -> str:
     today = date.today()
     week_start = today - timedelta(days=6)
 
@@ -224,7 +224,7 @@ def main():
     args = parser.parse_args()
 
     data = collect_week_data(args.days)
-    prompt = build_prompt(data)
+    prompt = build_prompt(data, args.days)
 
     if args.dry_run:
         print("=== PROMPT ===")
