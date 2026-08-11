@@ -9,32 +9,32 @@
 import argparse
 import json
 from datetime import date, timedelta
-from pathlib import Path
 
 from soda_utils import SODA_DIR, run_claude, notify_error
 
 
 def collect_week_data(days: int = 7) -> dict:
     """過去N日分のコンテンツとメトリクスを収集"""
-    data = {"metrics": [], "note_files": [], "x_files": [], "meeting_files": [], "analysis_files": []}
+    data = {"metrics": [], "note_files": [], "meeting_files": [], "analysis_files": []}
     today = date.today()
 
     for i in range(days):
         target = today - timedelta(days=i)
         ds = str(target)
 
-        # メトリクス
+        # noteメトリクス
         mf = SODA_DIR / "logs" / "metrics" / f"{ds}.json"
         if mf.exists():
-            data["metrics"].extend(json.loads(mf.read_text()))
+            try:
+                j = json.loads(mf.read_text())
+                if isinstance(j, dict) and j.get("source") == "note":
+                    data["metrics"].append(j)
+            except (json.JSONDecodeError, KeyError):
+                pass
 
         # noteファイル
         for f in sorted((SODA_DIR / "content" / "note").glob(f"{ds}_*.md")):
             data["note_files"].append({"date": ds, "path": str(f), "content": f.read_text()})
-
-        # X投稿ファイル
-        for f in sorted((SODA_DIR / "content" / "x_posts").glob(f"{ds}_*.md")):
-            data["x_files"].append({"date": ds, "path": str(f), "content": f.read_text()})
 
         # 全Agent会議ログ
         mf = SODA_DIR / "logs" / "meeting" / f"{ds}_meeting.md"
@@ -73,18 +73,20 @@ def build_prompt(data: dict) -> str:
     ]
 
     if data["metrics"]:
-        sections.append("## Xメトリクスデータ")
-        for m in data["metrics"]:
-            metrics = m.get("metrics") or {}
-            sections.append(
-                f"- [{m['posted_at'][:10]}] {m['theme']} {m['post_number']}本目 "
-                f"| いいね:{metrics.get('likes','?')} "
-                f"RT:{metrics.get('retweets','?')} "
-                f"IMP:{metrics.get('impressions','?')} "
-                f"| {m['text'][:40]}..."
-            )
+        sections.append("## noteメトリクスデータ（日付降順、各日ビュー上位20件）")
+        for m in sorted(data["metrics"], key=lambda x: x.get("date", ""), reverse=True):
+            articles = m.get("articles") or []
+            top = sorted(articles, key=lambda a: a.get("views", 0), reverse=True)[:20]
+            sections.append(f"- {m.get('date')}（{len(articles)}記事中、ビュー上位20件）")
+            for a in top:
+                sections.append(
+                    f"  - ビュー:{a.get('views', '?')} "
+                    f"スキ:{a.get('likes', '?')} "
+                    f"コメント:{a.get('comments', '?')} "
+                    f"— {a.get('title', '')}"
+                )
     else:
-        sections.append("## Xメトリクスデータ\n（今週はメトリクス未取得。投稿内容から定性分析する）")
+        sections.append("## noteメトリクスデータ\n（今週はメトリクス未取得。記事内容から定性分析する）")
 
     sections.append("")
 
@@ -97,13 +99,6 @@ def build_prompt(data: dict) -> str:
         sections.append("## 今週のnote記事\n（なし）")
 
     sections.append("")
-
-    if data["x_files"]:
-        sections.append("## 今週のX投稿ファイル（抜粋）")
-        for f in data["x_files"]:
-            sections.append(f"### {f['date']} - {Path(f['path']).stem}")
-            sections.append(f["content"][:300])
-            sections.append("")
 
     if data["analysis_files"]:
         sections.append("## 今週の日次投稿分析（結論のみ）")
@@ -209,7 +204,7 @@ def build_prompt(data: dict) -> str:
         "### 2. 今週一番売れそうだった悩み\n"
         "（商品タネ・読者反応から「¥1,000を出す人がいる」と判断できる悩みを1つ。根拠も1文で）\n\n"
         "### 3. 来週無料で検証するテーマ\n"
-        "（まだ反応が見えていないが試すべきテーマ。X or noteで来週出す具体的な案を1つ）\n\n"
+        "（まだ反応が見えていないが試すべきテーマ。noteで来週出す具体的な案を1つ）\n\n"
         "### 4. 来週商品化するテーマ\n"
         "（商品バックログ・タネから来週制作に入るものを1つ。タイトル・形式・価格・制作時間を明記）\n\n"
         "### 5. メール登録導線の改善点\n"

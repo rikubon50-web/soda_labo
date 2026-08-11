@@ -63,10 +63,6 @@ MEETING_FORMAT = """
 ## Writer
 役割: 読者が反応しやすい形に具体化する / フック・本文方向・伝わる表現に落とす
 禁止: 会議を再び抽象化すること / 読者視点のない自己満表現
-X夜投稿のCTAルール（必須）:
-  - フォロー誘導は原則禁止
-  - note遷移 / Google Form（無料テンプレ受け取り）/ 無料PDF のいずれかに誘導すること
-  - 直前の会議ログの改善アクション表を必ず参照し、指示があればそれをデフォルトとして採用する
 
 ## Editor
 役割: 弱い案を見抜く / 強い案をより鋭く短くする / トーンを統一する
@@ -95,7 +91,7 @@ X夜投稿のCTAルール（必須）:
 
 # 会議の進行
 
-1. Secretaryが前日データ（日次ログ・CEOスコア・Xメトリクス）を3行以内で整理する
+1. Secretaryが前日データ（日次ログ・CEOスコア・noteメトリクス）を3行以内で整理する
 2. Analystが事実ベースで重要示唆を3つ出す
 3. Plannerが候補案を5つ出す
 4. CEOが一次選別して2案まで絞る（前日会議で使用時期が決まっている案は再評価せず除外する）
@@ -184,16 +180,20 @@ def collect_yesterday_data() -> dict:
     data["note_url"] = note_url_file.read_text().strip() if note_url_file.exists() else ""
 
     metrics_file = SODA_DIR / "logs" / "metrics" / f"{ds}.json"
-    data["metrics"] = json.loads(metrics_file.read_text()) if metrics_file.exists() else []
+    data["metrics"] = {}
+    if metrics_file.exists():
+        try:
+            j = json.loads(metrics_file.read_text())
+            if isinstance(j, dict) and j.get("source") == "note":
+                data["metrics"] = j
+        except (json.JSONDecodeError, KeyError):
+            pass
 
     note_files = sorted((SODA_DIR / "content" / "note").glob(f"{ds}_*.md"))
     data["note_content"] = note_files[0].read_text()[:600] if note_files else ""
 
-    x_files = sorted((SODA_DIR / "content" / "x_posts").glob(f"{ds}_*.md"))
-    data["x_content"] = x_files[0].read_text() if x_files else ""
-
     run_log = SODA_DIR / "logs" / "cron" / f"{ds}_run.log"
-    data["run_log"] = run_log.read_text(errors="replace")[-4000:] if run_log.exists() else ""
+    data["run_log"] = run_log.read_text(errors="replace")[-3500:] if run_log.exists() else ""
 
     meeting_files = sorted((SODA_DIR / "logs" / "meeting").glob("*_meeting.md"))
     if meeting_files:
@@ -246,19 +246,20 @@ def build_prompt(data: dict, today: date) -> str:
     if data.get("note_url"):
         lines.append(f"\n### note公開URL\n{data['note_url']}")
 
-    lines.append("\n### Xメトリクス")
-    if data["metrics"]:
-        for m in data["metrics"]:
-            met = m.get("metrics") or {}
+    lines.append("\n### noteメトリクス")
+    articles = data["metrics"].get("articles") or []
+    if articles:
+        top = sorted(articles, key=lambda a: a.get("views", 0), reverse=True)[:20]
+        lines.append(f"（{len(articles)}記事中、ビュー上位20件）")
+        for a in top:
             lines.append(
-                f"- {m['post_number']}本目: "
-                f"いいね:{met.get('likes', '?')} "
-                f"RT:{met.get('retweets', '?')} "
-                f"IMP:{met.get('impressions', '?')} "
-                f"| {m['text'][:40]}..."
+                f"- ビュー:{a.get('views', '?')} "
+                f"スキ:{a.get('likes', '?')} "
+                f"コメント:{a.get('comments', '?')} "
+                f"— {a.get('title', '')}"
             )
     else:
-        lines.append("（未取得 — 投稿内容から定性評価すること）")
+        lines.append("（未取得 — 記事内容から定性評価すること）")
 
     lines.append("\n### Secretary日次ログ")
     lines.append(data["daily_log"] if data["daily_log"] else "（なし）")
@@ -266,15 +267,12 @@ def build_prompt(data: dict, today: date) -> str:
     lines.append("\n### note記事（先頭600字）")
     lines.append(data["note_content"] if data["note_content"] else "（なし）")
 
-    lines.append("\n### X投稿内容")
-    lines.append(data["x_content"] if data["x_content"] else "（なし）")
-
     if data["run_log"]:
         lines.append("\n### 自動実行ログ（直近4000字）")
         lines.append(f"```\n{data['run_log']}\n```")
 
     if data.get("last_meeting_actions"):
-        lines.append("\n### 前回会議の改善アクション（Writerは夜投稿CTA設計時に必ず確認すること）")
+        lines.append("\n### 前回会議の改善アクション（WriterはCTA設計時に必ず確認すること）")
         lines.append(data["last_meeting_actions"])
 
     if data.get("recent_ideas"):
