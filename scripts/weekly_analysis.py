@@ -13,6 +13,30 @@ from datetime import date, timedelta
 from soda_utils import SODA_DIR, run_claude, notify_error
 
 
+def collect_follower_log(limit: int = 8) -> list:
+    """follower_log.jsonl の直近N行を収集（ファイル欠如・空・壊れた行は安全にスキップ）"""
+    log_file = SODA_DIR / "logs" / "ops" / "follower_log.jsonl"
+    if not log_file.exists():
+        return []
+
+    entries = []
+    try:
+        for line in log_file.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                j = json.loads(line)
+                if isinstance(j, dict) and "date" in j and "followers" in j:
+                    entries.append(j)
+            except json.JSONDecodeError:
+                continue
+    except OSError:
+        return []
+
+    return entries[-limit:]
+
+
 def collect_week_data(days: int = 7) -> dict:
     """過去N日分のコンテンツとメトリクスを収集"""
     data = {"metrics": [], "note_files": [], "meeting_files": [], "analysis_files": []}
@@ -59,6 +83,9 @@ def collect_week_data(days: int = 7) -> dict:
     backlog = SODA_DIR / "products" / "product_backlog.md"
     data["product_backlog"] = backlog.read_text() if backlog.exists() else ""
 
+    # フォロワー推移（直近8行）
+    data["followers"] = collect_follower_log()
+
     return data
 
 
@@ -87,6 +114,15 @@ def build_prompt(data: dict, days: int = 7) -> str:
                 )
     else:
         sections.append("## noteメトリクスデータ\n（今週はメトリクス未取得。記事内容から定性分析する）")
+
+    sections.append("")
+
+    if data.get("followers"):
+        sections.append("### フォロワー推移（直近8行）")
+        for f in data["followers"]:
+            sections.append(f"- {f.get('date')}: {f.get('followers')}人")
+    else:
+        sections.append("### フォロワー推移\n（follower_log.jsonl が未取得または空のためスキップ）")
 
     sections.append("")
 
@@ -195,6 +231,15 @@ def build_prompt(data: dict, days: int = 7) -> str:
         f"「### 1. 今週一番伸びたテーマ」で選んだテーマを以下の形式で「## 暫定候補」セクションに Edit toolで追記する。\n"
         f"追記形式: '- [{today}] [テーマ名] — [なぜ伸びたか仮説1文]'\n"
         f"同じテーマが既に3回以上記載されていれば「## 確定勝ちパターン」に移動して太字にする。\n\n"
+        "週次レポートでは、以下の分析観点も必ず反映すること。\n"
+        "- 土日記事（週間まとめ・運営実録）と平日記事のビュー・スキを比較し、"
+        "戦略仮説（土日型が平日型を上回る）が成立しているか判定すること。"
+        "日曜実録記事は logs/daily/{日付}_magazine.txt の中身が"
+        "「SODA運営実録 — AI全自動メディアの数字と中身」であるかで識別できる\n"
+        "- 商品化トリガーの判定: follower_log.jsonl の最新フォロワー数が50以上、"
+        "または日曜実録記事の週間ビューが300以上なら、分析結果の冒頭に"
+        "「★商品化トリガー到達」と明記し、docs/content_strategy.md の"
+        "商品ロードマップ第1弾の準備を提案すること\n\n"
         "週次レポートは通常の分析に加え、以下の6項目を必ず独立したセクションとして含めること。"
         "各項目は「検討する」「考える」で終わらせず、具体的な内容まで書くこと。\n\n"
         "---\n\n"
