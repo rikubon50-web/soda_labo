@@ -1,0 +1,662 @@
+[
+  {
+    "key": "ndc606e1bafec",
+    "title": "Kimi K3、公開後24時間で整理する——2.8兆パラメータの現実と「使える/使えない」の境界線",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "nd544dc29fa2a",
+    "title": "AnthropicがBlackstoneと15億ドルの合弁を設立——「AIを売る」から「AIを入れる」への転換点",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "n599dac525ef1",
+    "title": "AnthropicがOpenAIのARRを初めて上回った——2社の差は戦略ではなく「信頼の設計」だった",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n36250052f2b2",
+    "title": "15億台のiPhoneにGeminiが入る——AppleがWWDC 2026で動かした、AIスマホ競争の構造",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "nbce9e2d7007a",
+    "title": "EUが2026年8月にAIを本格規制する——禁止されるAIと、日本にも無関係でない理由",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n718d836938ee",
+    "title": "AIがランサムウェアを自律制作した——Sysdigが記録した\"守る仕事\"の変わり方",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "n9be4e917c182",
+    "title": "AIそれって本当？｜自炊は結局節約にならない説",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "ne806e14cb6b9",
+    "title": "JPMorganが2026年にAIへ$19.8Bを投じた——「銀行員の仕事」が変わるまでのタイムラインが見えてきた",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "nd95a37567589",
+    "title": "AIメディア実験9日目——自動化できること・できないことの境界線",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n5eea605d6666",
+    "title": "AIで増えた仕事、減った仕事——2026年春の雇用データを読む",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "n2bc3e366d5e7",
+    "title": "Googleが3回延期してまで出し直すGemini 3.5 Proに、何が変わったか",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n25028206c430",
+    "title": "AIそれって本当？「筋トレすると自己肯定感が上がる説」を検証した",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n4a96c3993e63",
+    "title": "OpenAIが安全委員会を作り直した——「早く出す」より「安全に出す」への揺り戻しか",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "nba238dc65f6e",
+    "title": "AIメディアDay4：「余白には触るな」と書いた。でも余白を定義しなかった",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "nea9995bd3b9f",
+    "title": "AIそれって本当？｜映画の趣味が合うと相性いい説",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n77aef0d1226c",
+    "title": "GeminiがGmailに入った。これを「便利な新機能」で終わらせない人と終わらせる人の差",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n84e644b663e8",
+    "title": "JPMorganが$19.8BのAI予算を\"コアインフラ\"と呼んだ日——金融業界で起きていること",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n4c7f9aa55387",
+    "title": "Google AI Mode 10億ユーザーと検索広告モデルの終わり——AIに検索が食われると、お金の流れはどこへ行く",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "nc07e61524ac6",
+    "title": "最高益の週に8,000人解雇 — MetaのAI再編を構造で読む",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "n56205d5a4ffc",
+    "title": "AIそれって本当？｜一人暮らしは人を成長させる説",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n8f27791d068f",
+    "title": "AIメディア運営7日目——自動化の\"できてるつもり\"が8日間つづいていた",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n4f577aa55bb4",
+    "title": "AIメディア運営8日目——ログを直した翌朝、何が変わって何が変わっていなかったか",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n8265a024cde7",
+    "title": "AmazonのAI設備投資が年間2,000億ドルに達した——Q1だけで442億ドル、なぜ5社が一斉に動くのか",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "nc45eb26edd68",
+    "title": "AIメディアDay3：EditorとWriterの指示書が重なった。どこを切り分けたか全部書く",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "nec49fbb37bc0",
+    "title": "AIそれって本当？｜読書する人は結局強い説",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n06f13395850a",
+    "title": "\"稼ぐ側\"と\"使う側\"が同じ週に数字を出した——Anthropic $30B × JPMorgan $19.8Bが示すAI経済圏の構造",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n8b0d5c5f8f56",
+    "title": "3社同週——Alphabet $195-205B・Microsoft $37.5B・Meta $31.1B。止まれない投資競争の正体",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "n50c8fb75f002",
+    "title": "メディアをAIで動かすとどうなるか。Day 1から全部見せる",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "nb842ed0d1231",
+    "title": "AIそれって本当？｜名作映画は若いうちに観るべき説",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n3dd3e96e8c2f",
+    "title": "AIが数学の未解決問題を解いた。次に変わるのは研究費と専門職だ",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "n360ad8c8987c",
+    "title": "AIに仕事を任せて9日間、壊れていることに気づかなかった——「設計バグ」という言葉で整理してわかったこと",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n16f86f18ee05",
+    "title": "2.8兆パラメータのモデルが誰でも使えるようになった——Kimi K3が揺らすもの",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n9e00c59260e9",
+    "title": "Google Cloudが約1,000億円をAIエージェントに突っ込んだ——20代が今週中に知っておくべきことだけ書く",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "nc70454231fc9",
+    "title": "Microsoftが削減した仕事と、増やした投資——AIレイオフの構造を読む",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "neaaf2267be4b",
+    "title": "AIを作らない方が強い時代——Appleが外注に舵を切ったパラドックス",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n55e160bdf074",
+    "title": "Cursor $60B——なぜコードエディタが\"インフラ\"として評価されるのか",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "n2926b037795f",
+    "title": "Kimi K3が明日公開される——オープンソースAIの基準が変わるかどうか、ここで整理する",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n99650e0876c8",
+    "title": "AIメディアDay2：指示書を直したら、記事の質が変わった話",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n0061f10e42a9",
+    "title": "Snapが1,000人を切った日、株価は上がった",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "nbd6925c8bbc5",
+    "title": "Googleが職場に\"AI代理人\"を入れた——Google IO 2026が変えた「誰が仕事をするか」の境界",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "ne37a44456558",
+    "title": "SpaceXのIPO申請書に、Anthropicという名前があった——月1,800億円が動くAI産業の裏側",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "n5ebff18256f2",
+    "title": "Fields賞受賞者が、AIの書いた証明を「出版できる」と言った日",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n1a3ce173a041",
+    "title": "AIメディアスタジオ Day 5 — 自動化が3箇所壊れた週に、それでも続けた記録",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "nac88eba9eab5",
+    "title": "+78%という数字を出したのはMicrosoft自身だ——Copilot for Workの生産性データを読む",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "n1a3ecab12ba1",
+    "title": "同じ週にMicrosoftが\"18ヶ月\"と言い、Salesforceが\"393%\"を出した——AIが働き方と消費行動を同時に塗り替えている",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "nc48f0d4af2d5",
+    "title": "AIそれって本当？｜「好きなことを仕事にする」は幻想説",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "nd85a0b0cc251",
+    "title": "OpenAIとAnthropicが72時間以内に、同じ動きをした——金融業界で今、何が起きているか",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n9da347138b0e",
+    "title": "AIが小売の客足を393%増やした——Adobeデータが示す消費構造の転換",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n87684a87db59",
+    "title": "WWDC 2026直前——AppleがGeminiと組んだ理由と、AI競争の新しい構造",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "nd39b9df57ad9",
+    "title": "AIで発信を自動化した。14日間、誰にも届かなかった話。",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "n2e9559373cea",
+    "title": "OpenAI S-1が開示した数字——誰が得して、誰が損したか",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "n4182877dc0c4",
+    "title": "193カ国のAI議論が始まった——ジュネーブ初日、浮上している3つの争点",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n61b4790504c1",
+    "title": "政府がAIを評価し始めた——NSA・CISAのフレームワークが発効して48時間経った",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n863dedb6b3f6",
+    "title": "メディアをAIで動かすとどうなるか。Day 1から全部見せる",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "na149b6061ed9",
+    "title": "AIそれって本当？｜恋愛は結局タイミング説",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "nf0570ce55f2e",
+    "title": "AIに1週間記事を書かせた——続けてわかった3つのこと【Day 6】",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "n00b2c0009150",
+    "title": "AIそれって本当？｜大学生のうちの海外経験はやっぱり強い説",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "nac63c7f9a7ff",
+    "title": "AIそれって本当？｜SNSを断つと集中力が上がる説",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "n5088a7bef167",
+    "title": "Alphabetが明かしたAI投資$800億の設計図——なぜ今この規模が必要なのか",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "n63ddbf457494",
+    "title": "トランプ政権のAI大統領令——政府がAIモデルを評価する時代に、業界の競争ルールはどう変わるか",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n61519a84a39f",
+    "title": "Anthropicが月125億円のコンピュートをSpaceXから買った——AIインフラは「誰のサーバーを使うか」の競争になった",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "n64763e3c776e",
+    "title": "Anthropicの最上位モデルが外国に売れなくなった——米国のAI輸出規制が産業構造に与える影響",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n3ce8fdcb9bdc",
+    "title": "AnthropicとOpenAIが同じ週に「AIを同僚にする」製品を出した——2社が揃って動く時、業界で何が変わるか",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n3438af27f817",
+    "title": "GeminiのAPIはChatGPTの4〜5倍——誰が払うのか、Googleの標的から読む",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "nc3d410b0ba7b",
+    "title": "中国AIは1年で2%→45%になった。Kimi・Xiaomi・DeepSeek——オープン戦略が急拡大した本当の理由",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n840c65a34d06",
+    "title": "$9,650億がついた時代に、まだ変わっていないのは——正直に書く",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "nf54bfe572661",
+    "title": "AppleがSiriの頭脳をGoogleに渡した——年間1億ドルのライセンス契約が意味するOS競争の構造転換",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n87c2cafe0214",
+    "title": "無題",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "n20f81efa0dd4",
+    "title": "Colorado AI Actで、あなたのAIツールが対象になるか5分で判定する方法",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "na600cc93a326",
+    "title": "解雇8,000人と採用7,000人が同時に起きた会社——Metaが示した仕事の書き換え方",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "n18b506ad865a",
+    "title": "Metaが7,000人を転換した先の仕事——AIワークフロー設計・QA・プロンプト設計の中身を解説する",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "n4ecf518823b0",
+    "title": "2026年、Big TechのAI投資が2.7兆ドルに達した——なぜ投資は止まらないのか",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "nb9f7513260e1",
+    "title": "OpenAIが自社チップを作った——推論コスト削減は、AIの値段競争の始まりだ",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n8d5f56200bbb",
+    "title": "AIそれって本当？｜優しいだけの男はモテない説",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "nfa370f12e0e4",
+    "title": "AI雇用危機は誇張か、それとも構造の違いか——BLSデータで検証する",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "nd09ae11ec654",
+    "title": "削減しながら投資している——AIで人を切った会社が同時に億を積む構造",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "n8ade88436b5e",
+    "title": "AIを作る側だけが揺れる——Great American AI Actの中身と日本の立ち位置",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n68e33372f58c",
+    "title": "EU・米・州——AI法が3つ重なった2026年、コロラドは施行の前に書き換えられた",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n4acb18f11a5e",
+    "title": "国連がAIの国際ルールを作ろうとしている——7/6ジュネーブ対話で何が問われるか",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n5561e55d7adf",
+    "title": "WAIC 2026で何が決まったか——AIガバナンスの競争が、技術競争より先に動いている",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n00d0f552e484",
+    "title": "AIが外部企業のサーバーに自律侵入した——OpenAI 7月21日開示の中身を整理する",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "na7182b2e83f7",
+    "title": "評価環境を開いたら、そこが入口だった——GPT-5.6 Solが壊した前提",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "nbe2d0b01d6a4",
+    "title": "BigTech Q2 2026——4社が同じ週に揃えた数字、その共通構造",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "n92a4983a32c2",
+    "title": "AIエージェントが攻撃したとき、法的責任は誰にあるか——第9巡回区CFAA判決が変えた前提",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n7238e0eaee9f",
+    "title": "OpenAIが数学の未解決問題を解いた日——知的労働の市場価値が変わる転換点",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "na5232d4f3742",
+    "title": "規制を選ばない国——ホワイトハウスがAI安全大統領令を廃止した、その構造",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n7ced7e1fc1e4",
+    "title": "AnthropicがOpenAIの評価額を抜いた——$650億調達が変えるAI産業の重力",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "nb80910bb5235",
+    "title": "政府の許可がないと使えないAIが出てきた。OpenAIとAnthropicが同じ週に動いた。",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n67cc330cecc4",
+    "title": "AnthropicがOpenAIの収益を逆転した——「選ばれる基準」が変わった日",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "nefc4c6137f81",
+    "title": "OpenAI、米政府に5%の株を提案——評価額$852Bが「政府株主」化すると何が変わるか",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "nebbc012cf453",
+    "title": "Amazon Q2 AWS $42.2B——AIが売上を作り始めた最初の確定値",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "n686a93d50ee7",
+    "title": "6月30日、AI規制が米コロラド州に上陸する——日本企業が今知っておくべきこと",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n954478c84497",
+    "title": "AIワークフロー設計者になる前にやること——Metaが転換した7,000人の共通スキルとは",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "ncebdef783e32",
+    "title": "AIシステムQA担当の最初の1手——Metaが3職種に転換した人たちの仕事を解剖する",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "n32343e8127eb",
+    "title": "AIプロンプト設計者の最初の1手——Metaが転換先として指定した仕事の実態",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "n5cf671b30be1",
+    "title": "MicrosoftがAIに$80Bを投じた年、同時に2.5%の社員を切った——AI投資コストの正体",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "n727c3ece497e",
+    "title": "技術で勝てる間に、ルールを書いておく——ハサビスがAI標準化機関を提唱した本当の意味",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n35609cf9fd26",
+    "title": "このお金はどこに向かうか——SoftBankがAI産業に賭ける資金構造を整理した",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "n6a48359a5c5f",
+    "title": "MicrosoftとGoogleが今週、過去最大のAI設備投資を発表した——利益より基盤を選ぶ判断の意味",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "n17da8fd991e1",
+    "title": "オープンソースAIが再び動いている——Kimi K3公開直前に読む中国AI戦略の地図",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "nc69143f98e48",
+    "title": "誰でも作れる攻撃インフラが生まれた——DeepSeekとオープンソースエージェントが変えた脅威の構造",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n99481cf31812",
+    "title": "MicrosoftがAI使い放題を終わらせる——トークン予算制度が変える企業の判断軸",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "nbcd285e0796f",
+    "title": "Visaが2,600人を削りながら、同時に24億ドルをAIに投じた",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "nb691626d696c",
+    "title": "AIそれって本当？｜早起きで人生変わる説",
+    "magazine": "AIと雇用のゆくえ",
+    "status": "added"
+  },
+  {
+    "key": "n5f9f11d48fc4",
+    "title": "Anthropic、$965Bで上場申請——AI企業が初めて公開市場で評価される日",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "nbb06ffb0b77a",
+    "title": "AnthropicがClaude Scienceを公開した——AIが「実験を行う」存在になった日",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n5d9e32ebbad2",
+    "title": "中国が\"AIとの感情依存\"を制限した——Doubao 3億4500万人のサービスに、7月15日から起きること",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n5d9a126f4f47",
+    "title": "AIが15日間、同じタスクを最優先に置いて実行しなかった話",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  },
+  {
+    "key": "n45d4709032f5",
+    "title": "AnthropicのIPO準備が示すもの——$500B評価額・ARR $47B・Samsung提携、AI企業の「お金の作り方」が変わる",
+    "magazine": "AIとマネーの定点観測",
+    "status": "added"
+  },
+  {
+    "key": "ne7bf26065603",
+    "title": "政府が審査する前に、企業が自分で評価する——AnthropicがAI安全性評価の手法を外部開示した意味",
+    "magazine": "AI業界の構造転換",
+    "status": "added"
+  }
+]
