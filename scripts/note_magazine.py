@@ -156,6 +156,31 @@ def fetch_magazines(page) -> list[dict]:
     return results
 
 
+def _select_magazine_in_modal(page, magazine_name: str, dump_tag: str) -> None:
+    """「記事を追加」アイコンクリック後に開くマガジン選択モーダルから対象マガジン名をクリックする。
+
+    マガジン選択モーダルのコンテナ内に絞って探す（ページ全体からのtext検索は
+    同名テキストが他所にあった場合の誤クリックの恐れがあるため避ける）。
+    SEL_MAGAZINE_MODAL_CONTAINER は未検証のため、コンテナ自体が見つからない場合のみ
+    「モーダルらしき最前面要素が特定できない」とみなし、従来のページ全体検索を
+    最終フォールバックとして使う（コンテナは見つかったが中に対象が無い場合は
+    フォールバックしない＝誤クリックリスクを避ける）。
+
+    add_today() と note_backfill_magazines.py の両方から呼ばれる共通ロジック。
+    見つからなければ失敗ダンプ後にRuntimeErrorを投げる（呼び出し側でハンドリングする）。
+    """
+    modal = page.query_selector(SEL_MAGAZINE_MODAL_CONTAINER)
+    scope = modal if modal else page
+    target = scope.query_selector(f'text="{magazine_name}"')
+    if not target and modal is None:
+        # モーダルコンテナ自体が想定と違う場合の最終フォールバック（誤検出リスクは残る）
+        target = page.query_selector(f'text="{magazine_name}"')
+    if not target:
+        _dump_failure(page, dump_tag)
+        raise RuntimeError(f"マガジン選択モーダルに '{magazine_name}' が見つかりません")
+    target.click()
+
+
 def _load_config() -> dict:
     if CONFIG_PATH.exists():
         try:
@@ -368,21 +393,7 @@ def add_today(ctx, dry_run: bool) -> None:
     add_icon.click()
     page.wait_for_timeout(1500)
 
-    # マガジン選択モーダルのコンテナ内に絞って探す（ページ全体からのtext検索は
-    # 同名テキストが他所にあった場合の誤クリックの恐れがあるため避ける）。
-    # SEL_MAGAZINE_MODAL_CONTAINER は未検証のため、見つからない場合は
-    # 「モーダルらしき最前面要素」にフォールバックしてから、それでも
-    # 見つからなければ従来のページ全体検索を最終フォールバックとして使う。
-    modal = page.query_selector(SEL_MAGAZINE_MODAL_CONTAINER)
-    scope = modal if modal else page
-    target = scope.query_selector(f'text="{magazine_name}"')
-    if not target and modal is None:
-        # モーダルコンテナ自体が想定と違う場合の最終フォールバック（誤検出リスクは残る）
-        target = page.query_selector(f'text="{magazine_name}"')
-    if not target:
-        _dump_failure(page, "magazine_modal_target_not_found")
-        raise RuntimeError(f"マガジン選択モーダルに '{magazine_name}' が見つかりません")
-    target.click()
+    _select_magazine_in_modal(page, magazine_name, "magazine_modal_target_not_found")
     page.wait_for_timeout(2000)
 
     # 検証: 記事詳細APIの belonging_magazine_keys に対象keyが含まれるか確認する。

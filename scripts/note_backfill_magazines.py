@@ -59,6 +59,7 @@ from note_magazine import (
     _load_config,
     _launch_ctx,
     _dump_failure,
+    _select_magazine_in_modal,
 )
 
 METRICS_DIR    = SODA_DIR / "logs" / "metrics"
@@ -197,7 +198,18 @@ def classify_articles(articles: list[dict]) -> dict:
 # ─── 本実行: Playwrightでの追加処理 ────────────────────────────────────
 
 def _add_article_to_magazine(page, note_key: str, magazine_name: str, magazine_key: str) -> None:
-    """note_magazine.py の add_today() と同じUI操作パターンで1記事を1マガジンに追加する"""
+    """note_magazine.py の add_today() と同じUI操作パターンで1記事を1マガジンに追加する。
+
+    マガジン選択のクリックは note_magazine.py の _select_magazine_in_modal() を再利用する
+    （モーダルスコープ→ページ全体の2段構え。重複実装しない）。
+
+    ★fail-soft: 追加後の検証（GET /api/v3/notes/{key} の belonging_magazine_keys）は
+    note_magazine.py の add_today() と同様、未実測（仮説）のエンドポイントである。
+    検証仮説が外れていた場合に「実際は追加成功なのに検証失敗でstatus=failed記録
+    →再実行で同じ記事を二重クリックしてしまう」事故を防ぐため、検証失敗は例外にせず
+    WARNログに留める。status（added/failed）はここまでの「記事を追加」アイコン→
+    モーダルクリックの成否のみで決まる（=この関数が例外を投げずに返れば成功扱い）。
+    """
     note_url = f"https://note.com/{CREATOR_URLNAME}/n/{note_key}"
     page.goto(note_url, wait_until="networkidle", timeout=30000)
     page.wait_for_timeout(2000)
@@ -209,23 +221,28 @@ def _add_article_to_magazine(page, note_key: str, magazine_name: str, magazine_k
     add_icon.click()
     page.wait_for_timeout(1500)
 
-    target = page.query_selector(f'text="{magazine_name}"')
-    if not target:
-        _dump_failure(page, f"backfill_modal_target_not_found_{note_key}")
-        raise RuntimeError(f"マガジン選択モーダルに '{magazine_name}' が見つかりません")
-    target.click()
+    _select_magazine_in_modal(page, magazine_name, f"backfill_modal_target_not_found_{note_key}")
     page.wait_for_timeout(2000)
 
-    resp = page.goto(f"https://note.com/api/v3/notes/{note_key}", wait_until="domcontentloaded", timeout=20000)
-    if resp is None or resp.status != 200:
-        _dump_failure(page, f"backfill_verify_fetch_failed_{note_key}")
-        raise RuntimeError(f"追加後の検証取得に失敗: status={resp.status if resp else '不明'}")
-    body = page.evaluate("() => document.body.innerText")
-    raw = json.loads(body)
-    belonging = raw.get("data", {}).get("belonging_magazine_keys", [])
-    if magazine_key not in belonging:
-        _dump_failure(page, f"backfill_verify_failed_{note_key}")
-        raise RuntimeError(f"追加後の検証に失敗（belonging_magazine_keys={belonging}）")
+    # 検証（fail-soft）: 失敗してもクリック操作自体は完了しているため例外は投げない
+    try:
+        resp = page.goto(f"https://note.com/api/v3/notes/{note_key}", wait_until="domcontentloaded", timeout=20000)
+        if resp is None or resp.status != 200:
+            print(f"WARN: 追加後の検証取得に失敗（追加自体は実行済み）: status={resp.status if resp else '不明'}", file=sys.stderr)
+        else:
+            body = page.evaluate("() => document.body.innerText")
+            raw = json.loads(body)
+            belonging = raw.get("data", {}).get("belonging_magazine_keys", [])
+            if magazine_key not in belonging:
+                print(
+                    f"WARN: 追加後の検証に失敗（追加自体は実行済み。要目視確認）: "
+                    f"belonging_magazine_keys={belonging}, expected_key={magazine_key}",
+                    file=sys.stderr,
+                )
+            else:
+                print(f"検証OK: belonging_magazine_keysに{magazine_key}を確認")
+    except Exception as e:
+        print(f"WARN: 追加後の検証中に例外が発生（追加自体は実行済み。要目視確認）: {e}", file=sys.stderr)
 
 
 def run_backfill(articles: list[dict], assignment: list[dict], limit: int | None) -> None:
