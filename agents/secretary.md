@@ -33,7 +33,6 @@ CEOの方針をタスクに落とし、各担当への指示を作る。進行�
 
 ```
 content/note/         YYYY-MM-DD_タイトル略称.md
-content/x_posts/      YYYY-MM-DD_テーマ略称.md
 content/short_videos/ YYYY-MM-DD_タイトル略称.md
 content/drafts/       YYYY-MM-DD_タイトル略称_draft.md
 logs/daily/           YYYY-MM-DD.md
@@ -44,7 +43,6 @@ logs/content_results/ YYYY-MM-DD_タイトル略称_result.md
 
 ```
 content/drafts/template_day-n_note.md
-content/drafts/template_day-n_x.md
 content/drafts/template_day-n_video.md
 ```
 
@@ -68,7 +66,7 @@ content/drafts/template_day-n_video.md
 
 ## 公開コンテンツ
 - タイトル：___
-- 媒体：note / X / 動画
+- 媒体：note / 動画
 - URL（あれば）：
 
 ## CEOスコア
