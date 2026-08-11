@@ -25,7 +25,6 @@ CEOの方針をタスクに落とし、各担当への指示を作る。進行�
 ```
 □ Writer：採用企画「___」の下書きを作る
    - フック作成は agents/skills/skill_hook_writing.md を使う
-   - X投稿設計は agents/skills/skill_x_thread.md を使う
 ```
 
 新しいAgentまたはSkillが追加された場合、Secretaryは `agents/REGISTRY.md` を更新する。
@@ -76,10 +75,8 @@ content/drafts/template_day-n_video.md
 - スコア：_/5
 - 判断理由：___
 
-## Xメトリクス（いいね/RT/IMP）
-- 1本目（朝）：いいね:_ / RT:_ / IMP:_
-- 2本目（昼）：いいね:_ / RT:_ / IMP:_
-- 3本目（夜）：いいね:_ / RT:_ / IMP:_
+## noteメトリクス（ビュー/スキ/コメント）
+- ビュー：_ / スキ：_ / コメント：_
 - 取得時刻：___（投稿後の経過時間も記録する）
 
 ## 反応メモ
