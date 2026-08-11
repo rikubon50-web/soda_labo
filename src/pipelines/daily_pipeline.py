@@ -53,6 +53,7 @@ def build_pipeline_prompt(today: date) -> str:
 5. audience/pain_points.md — 読者のペインポイント（企画の切り口に使う）
 6. audience/winning_topics.md — 反応が取れた確定テーマ（あれば優先的に参考にする）
 7. docs/voice_guide.md — 声の基準書（WriterとEditorは必ず参照すること）
+8. docs/perspectives.md — SODA視点ライブラリ（CEOとWriterは必ず参照すること）
 
 ファイルが存在しない場合はスキップしてよい。
 
@@ -61,6 +62,8 @@ WebSearch toolで以下のクエリを検索し、本日時点の最新AIニュ�
 
 - 検索クエリ: "AI news today {ds}"
 - 検索クエリ: "生成AI ニュース {ds}"
+- 検索クエリ: "AI layoffs OR funding OR acquisition news {ds}"
+- 検索クエリ: "AI industry news {ds_prev}"
 
 取得した情報から **本日公開・発表されたもの** に絞り、以下を判断基準にトップ3を選ぶ:
 1. 読者（AI・副業・発信に関心ある20代）が「それ知らなかった」と感じるか
@@ -75,7 +78,17 @@ agents/ceo.md を読み、CEOとして本日の優先テーマを決定する。
 **Step 0で取得した最新ニュースから「AI×お金・雇用・構造転換」3テーマに該当するもの1本を最優先のテーマ候補として選ぶこと（基準は agents/ceo.md「テーマ方針」参照）。**
 **該当ニュースがない場合は過去3〜7日から「今振り返ると」型で1本選ぶ。**
 **朝会議ログ（logs/meeting/{ds}_meeting.md）のCEO最終判断・Writerへの指示を最優先で参照すること。**
+**docs/perspectives.md の「ウォッチ中の仮説」に回収予定時期が到来したものがあれば、その回収をその日のテーマ候補として最優先で検討すること。**
 出力形式: agents/ceo.md の「優先テーマを出すとき」フォーマット。
+
+## Step 1.5: Researcher — 一次取材（Step 2の前に必ず実行）
+agents/researcher.md を読み、Step 1でCEOが採用したテーマ1本を深掘りする。
+- 一次情報（公式発表・プレスリリース・元記事）をWebFetchで実際に開いて読む
+- 英語ソースを含む追加検索をWebSearchで3〜5本行う
+- 反対意見・懐疑的な見方を最低1つ探す（見つからなければ「探したが見つからなかった」と記録）
+- 比較に使える過去の数字（前年・前四半期・類似事例）を集める
+取材結果を content/news/{ds}_research.md に agents/researcher.md の「取材ノート」フォーマットで保存する。
+一次情報が取得できない場合も、確認できた範囲で取材ノートを保存する（4区分の見出しは維持する）。
 
 ## Step 2: Planner — 企画案5本
 agents/planner.md を読み、CEOのテーマに基づいて企画案を5本出す。
@@ -90,6 +103,8 @@ agents/writer.md を読み、採用企画をもとに以下を下書きしてフ
 **昨日の投稿分析（post_analysis）で反応が高かった表現・フック・構成を参考にすること。**
 **アイデア資産（ideas）に使えるネタ・切り口があれば積極的に取り込むこと。**
 **朝会議ログのWriterへの指示がある場合は必ず従うこと。**
+**note記事の事実・数字は content/news/{ds}_research.md（取材ノート）に記載のあるものだけを使うこと。ノートにない数字は書かない。「未確認事項」の内容は本文でも未確認・報道ベースと明示する。取材ノートが存在しない場合のみStep 0の検索結果ベースで執筆してよい。**
+**docs/perspectives.md を読み、接続できる持論・伏線があれば本文で明示的に接続すること（agents/writer.md「SODA視点の接続ルール」参照）。**
 
 - note記事 → content/note/{ds}_[タイトル略称].md
   「AI×お金・雇用・構造転換」3テーマ該当ニュースの深掘り1本（agents/writer.md「note記事のジャンル方針」参照）。
@@ -120,6 +135,14 @@ agents/editor.md を読み、Step4で保存した3ファイルを磨いて上書
 - 自然さ確認: voice_guide照合 ✅/❌ | AI臭いパターン修正箇所（あれば列挙、なければ「なし」）
 ```
 
+## Step 5.5: Critic — 敵対的批評（Step 6の前に必ず実行）
+agents/critic.md を読み、Step 5でEditorが仕上げたnote記事を採点する。
+- docs/voice_guide.md の「AI臭いパターン一覧」と照合する
+- agents/critic.md の採点基準（各2点×5項目=10点満点）で採点し、直せる欠点を必ず3つ以上、修正指示として挙げる
+- 7点未満の場合: Editorが修正指示に従って記事を書き直し、Criticが再採点する。この書き直しは最大2周まで
+- 2周後も7点未満なら打ち切り、そのままStep 6に進む（CEOの減点判断に委ねる）
+採点結果（各周の点数と指摘）を logs/daily/{ds}_critic.md に保存する。
+
 ## Step 6: CEO — 最終公開判断（推敲ループ）
 agents/ceo.md の「最終公開判断を出すとき」フォーマットで5段階スコアを出す。
 採点時は自然さも評価すること：`docs/voice_guide.md` の「AI臭いパターン一覧」が原稿に残っている場合はスコアを1点減点する。
@@ -132,6 +155,12 @@ agents/ceo.md の「最終公開判断を出すとき」フォーマットで5�
 
 ## Step 7: Secretary — 日次ログ記録
 agents/secretary.md のログ形式に従い logs/daily/{ds}.md を作成して保存する。
+
+## Step 7.5: Secretary — 視点ライブラリ更新
+docs/perspectives.md を更新して上書き保存する。
+- 今日のnote記事に新しい仮説・伏線があれば「ウォッチ中の仮説」に追記する（初出日付と回収予定時期を必ず付す）
+- 今日の記事で回収（答え合わせ）した仮説があれば、結果（当たり/外れ/部分的）を添えて「回収済みアーカイブ」へ移動する
+- 「ウォッチ中の仮説」が15件を超える場合は、古い・弱いものからアーカイブへ移す
 
 ## 全体ルール
 - 全テキストは日本語
