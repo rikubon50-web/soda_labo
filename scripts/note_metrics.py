@@ -28,6 +28,25 @@ ERRORS_DIR  = SODA_DIR / "logs" / "errors"
 
 STATS_API_TEMPLATE = "https://note.com/api/v1/stats/pv?filter=all&page={page}&sort=pv"
 MAX_PAGES = 50  # 安全装置（無限ループ防止。2026-08時点の公開記事は110件・約10ページ）
+CREATOR_API_URL = "https://note.com/api/v2/creators/soda_labo"
+
+
+def fetch_followers(page) -> int | None:
+    """フォロワー数を取得する（公開API、ログイン不要）。
+
+    fetch_stats() と同じ Playwright page を使い回す。取得失敗時は None を返し、
+    呼び出し側（fetch_stats）が例外で落ちてメトリクス本体を巻き添えにしないようにする。
+    """
+    try:
+        resp = page.goto(CREATOR_API_URL, wait_until="domcontentloaded", timeout=30000)
+        if resp is None or resp.status != 200:
+            return None
+        body = page.evaluate("() => document.body.innerText")
+        data = json.loads(body)
+        followers = data.get("data", {}).get("followerCount")
+        return int(followers) if followers is not None else None
+    except Exception:
+        return None
 
 
 def fetch_stats() -> dict:
@@ -96,6 +115,7 @@ def fetch_stats() -> dict:
             if first_raw is None:
                 raise RuntimeError("統計APIから何も取得できませんでした")
             first_raw["data"]["note_stats"] = merged_stats
+            first_raw["followers"] = fetch_followers(page)
             return first_raw
         finally:
             ctx.close()
@@ -145,7 +165,8 @@ def main() -> int:
         )
         return 1
 
-    result = {"date": str(date.today()), "source": "note", "articles": articles}
+    followers = raw.get("followers") if raw else None
+    result = {"date": str(date.today()), "source": "note", "articles": articles, "followers": followers}
 
     if args.dry_run:
         print(json.dumps(result, ensure_ascii=False, indent=2))
