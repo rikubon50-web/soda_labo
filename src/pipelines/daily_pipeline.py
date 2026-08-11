@@ -5,7 +5,6 @@ run_pipeline.sh のClaudeパイプライン部分を完全に置き換える。
 Python f-string を使うため、シェル引用符の問題が構造的に起きない。
 各フェーズの成功/失敗を独立して記録する。
 """
-import json
 import logging
 import subprocess
 import sys
@@ -20,7 +19,6 @@ from src.config import (
     SODA_DIR,
     CRON_LOG_DIR,
     DAILY_LOG_DIR,
-    X_POSTS_DIR,
     NOTE_DIR,
     PYTHON_BIN,
     SCRIPTS_DIR,
@@ -111,12 +109,6 @@ agents/writer.md を読み、採用企画をもとに以下を下書きしてフ
   該当ニュースが当日になければ過去3〜7日から「今振り返ると」型で1本選ぶ。
   記事末尾に agents/writer.md の「note記事ハッシュタグルール」に従い #タグ を5つ付与する。
 
-- X投稿3本 → content/x_posts/{ds}_[テーマ略称].md
-  3本とも構造解説型テンプレート（agents/writer.md「X投稿のフォーマット（構造解説型 / 標準）」）で書く。
-  朝・昼・夜でそれぞれ別の AI ニュースを取り上げる（連結禁止・各投稿は単独完結）。
-  夜（3本目）は当日 note と同一ニュースを構造解説型ショート版で扱う。note URL は本文に書かない（x_post.py が自動付与）。
-  全3本：140〜400字、ハッシュタグ禁止、外部 URL は本文中に出典名で代替（例外：3テーマ該当ニュースは週1〜2回まで URL 可）。
-
 - 短尺動画台本 → content/short_videos/{ds}_[タイトル略称].md
   当日 note 記事と同じニュースを冒頭3秒インパクト型で 30〜45秒に圧縮。
 
@@ -196,24 +188,6 @@ def run_content_pipeline(today: date, run_log: Path) -> bool:
     return True
 
 
-def run_x_post(x_file: Path, post_number: int, run_log: Path) -> bool:
-    """x_post.py で X に投稿する。"""
-    step = f"X投稿（{post_number}本目）"
-    try:
-        r = subprocess.run(
-            [PYTHON_BIN, str(SCRIPTS_DIR / "x_post.py"), str(x_file), "--post", str(post_number)],
-            capture_output=True, text=True, timeout=120, cwd=str(SODA_DIR),
-        )
-        _log_append(run_log, r.stdout + r.stderr)
-        if r.returncode != 0:
-            _notify_error(step, r.stderr[-500:] or "詳細不明", run_log)
-            return False
-        return True
-    except Exception as e:
-        _notify_error(step, str(e), run_log)
-        return False
-
-
 def run_note_post(note_file: Path, run_log: Path) -> bool:
     """note_post.py で note.com に投稿する。失敗時は send_draft.py でフォールバック。"""
     step = "note投稿"
@@ -237,53 +211,20 @@ def run_note_post(note_file: Path, run_log: Path) -> bool:
         return False
 
 
-def run_fetch_metrics(run_log: Path) -> bool:
-    """fetch_metrics.py でメトリクスを取得する。"""
+def run_note_metrics(run_log: Path) -> bool:
+    """note_metrics.py でnoteメトリクスを取得する。"""
     try:
         r = subprocess.run(
-            [PYTHON_BIN, str(SCRIPTS_DIR / "fetch_metrics.py"), "--days", "1"],
-            capture_output=True, text=True, timeout=120, cwd=str(SODA_DIR),
+            [PYTHON_BIN, str(SCRIPTS_DIR / "note_metrics.py")],
+            capture_output=True, text=True, timeout=180, cwd=str(SODA_DIR),
         )
         _log_append(run_log, r.stdout + r.stderr)
         if r.returncode != 0:
-            _notify_error("Xメトリクス取得", r.stderr[-300:] or "詳細不明", run_log)
+            _notify_error("noteメトリクス取得", r.stderr[-300:] or "詳細不明", run_log)
             return False
         return True
     except Exception as e:
-        _notify_error("Xメトリクス取得", str(e), run_log)
-        return False
-
-
-# ─── ショーモード ───────────────────────────────────────────────────
-
-# 新規制作を停止したショーID（ceo.mdの方針変更に従い追加する）
-STOPPED_SHOWS: set[str] = {"aitsm"}
-
-
-def get_show_mode(today: date) -> tuple[str, str]:
-    """コンテンツモードファイルから (mode, theme) を返す。"""
-    mode_file = DAILY_LOG_DIR / f"{today.isoformat()}_content_mode.json"
-    try:
-        d = json.loads(mode_file.read_text())
-        return d.get("mode", "normal"), d.get("theme", "")
-    except Exception:
-        return "normal", ""
-
-
-def run_show_gen(show_mode: str, theme: str, run_log: Path) -> bool:
-    """run_show_gen.py でショーコンテンツを生成する。"""
-    try:
-        r = subprocess.run(
-            [PYTHON_BIN, str(SCRIPTS_DIR / "run_show_gen.py"), "--show", show_mode, "--theme", theme],
-            capture_output=True, text=True, timeout=600, cwd=str(SODA_DIR),
-        )
-        _log_append(run_log, r.stdout + r.stderr)
-        if r.returncode != 0:
-            _notify_error(f"ショーコンテンツ生成({show_mode})", r.stderr[-500:] or "詳細不明", run_log)
-            return False
-        return True
-    except Exception as e:
-        _notify_error(f"ショーコンテンツ生成({show_mode})", str(e), run_log)
+        _notify_error("noteメトリクス取得", str(e), run_log)
         return False
 
 
@@ -339,42 +280,19 @@ def main() -> int:
 
     _log = get_logger("daily_pipeline", run_log)
 
-    # ─ ショーモード判定 ──────────────────────────────────────────
-    show_mode, show_theme = get_show_mode(today)
-    x_files = sorted(X_POSTS_DIR.glob(f"{ds}_*.md"))
-
-    if show_mode != "normal" and show_mode and show_theme:
-        if show_mode in STOPPED_SHOWS:
-            _log.info(f"ショー停止中のためスキップ: {show_mode}（通常パイプラインで継続）")
-        elif x_files:
-            _log.info(f"ショーファイル生成済みのためスキップ: {show_mode}")
-        else:
-            _log.info(f"ショーモード: {show_mode} / テーマ: {show_theme}")
-            run_show_gen(show_mode, show_theme, run_log)
-            x_files = sorted(X_POSTS_DIR.glob(f"{ds}_*.md"))
-
     # ─ コンテンツパイプライン（Step 0-7）──────────────────────────
-    x_files = sorted(X_POSTS_DIR.glob(f"{ds}_*.md"))
-    if x_files:
-        _log.info(f"X投稿ファイル存在。Claudeパイプラインをスキップ: {x_files[0].name}")
+    note_files = sorted(NOTE_DIR.glob(f"{ds}_*.md"))
+    if note_files:
+        _log.info(f"note記事ファイル存在。Claudeパイプラインをスキップ: {note_files[0].name}")
     else:
         _log.info("Claudeパイプライン開始（Step 0-7）")
         ok = run_content_pipeline(today, run_log)
         if not ok:
-            _log.error("Claudeパイプライン失敗。Step 8以降をスキップ")
+            _log.error("Claudeパイプライン失敗。note投稿をスキップ")
             return 1
-        x_files = sorted(X_POSTS_DIR.glob(f"{ds}_*.md"))
+        note_files = sorted(NOTE_DIR.glob(f"{ds}_*.md"))
 
-    # ─ Step 8: X朝投稿 ───────────────────────────────────────────
-    if x_files:
-        _log.info(f"X朝投稿: {x_files[0].name}")
-        run_x_post(x_files[0], 1, run_log)
-    else:
-        _notify_error("X投稿ファイル未作成", f"content/x_posts/{ds}_*.md が存在しません")
-        _log.warning("X投稿ファイルが見つかりません")
-
-    # ─ Step 9: note投稿 ──────────────────────────────────────────
-    note_files = sorted(NOTE_DIR.glob(f"{ds}_*.md"))
+    # ─ note投稿 ──────────────────────────────────────────────────
     if note_files:
         _log.info(f"note投稿: {note_files[0].name}")
         run_note_post(note_files[0], run_log)
@@ -385,13 +303,12 @@ def main() -> int:
     # ─ CEOスコア確認 ─────────────────────────────────────────────
     _check_ceo_score(today)
 
-    # ─ Step 10: メトリクス取得 ───────────────────────────────────
-    _log.info("Xメトリクス取得")
-    run_fetch_metrics(run_log)
+    # ─ noteメトリクス取得 ────────────────────────────────────────
+    _log.info("noteメトリクス取得")
+    run_note_metrics(run_log)
 
     # ─ 成功通知 ──────────────────────────────────────────────────
-    show_info = f"ショー: {show_mode} / テーマ: {show_theme}" if show_mode != "normal" else ""
-    _notify_success(show_info)
+    _notify_success()
     _log.info("全工程完了")
     return 0
 
