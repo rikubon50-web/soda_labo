@@ -38,6 +38,68 @@ def build_pipeline_prompt(today: date) -> str:
     yesterday = today - timedelta(days=1)
     ds       = today.isoformat()
     ds_prev  = yesterday.isoformat()
+    wd       = today.weekday()  # 5=土曜, 6=日曜
+
+    step0_news = f"""## Step 0: ニュース収集（Step 1の前に必ず実行）
+WebSearch toolで以下のクエリを検索し、本日時点の最新AIニュースを把握する。
+
+- 検索クエリ: "AI news today {ds}"
+- 検索クエリ: "生成AI ニュース {ds}"
+- 検索クエリ: "AI layoffs OR funding OR acquisition news {ds}"
+- 検索クエリ: "AI industry news {ds_prev}"
+
+取得した情報から **本日公開・発表されたもの** に絞り、以下を判断基準にトップ3を選ぶ:
+1. 読者（AI・副業・発信に関心ある20代）が「それ知らなかった」と感じるか
+2. 「結局なにがすごいのか」を3分で説明できる規模感か
+3. 自分ごとにできるか（ツール・働き方・副業への影響）
+
+選んだトップ3をメモしてStep 1のCEOに渡すこと。
+ニュースが見つからない・古い情報しかない場合はStep 0をスキップしてよい。"""
+
+    step15_research = f"""## Step 1.5: Researcher — 一次取材（Step 2の前に必ず実行）
+agents/researcher.md を読み、Step 1でCEOが採用したテーマ1本を深掘りする。
+- 一次情報（公式発表・プレスリリース・元記事）をWebFetchで実際に開いて読む
+- 英語ソースを含む追加検索をWebSearchで3〜5本行う
+- 反対意見・懐疑的な見方を最低1つ探す（見つからなければ「探したが見つからなかった」と記録）
+- 比較に使える過去の数字（前年・前四半期・類似事例）を集める
+取材結果を content/news/{ds}_research.md に agents/researcher.md の「取材ノート」フォーマットで保存する。
+一次情報が取得できない場合も、確認できた範囲で取材ノートを保存する（4区分の見出しは維持する）。"""
+
+    step1_note = ""
+    step4_note = ""
+    step76_override = None
+
+    if wd == 5:
+        # 土曜: 週間まとめモード
+        step0_news = """## Step 0: 今週の記事の読み込み（土曜まとめモード）
+本日は「今週のAI構造まとめ」の日。ニュース収集は行わない。
+代わりに、今週月曜から金曜までの自分のnote記事（content/note/ の当週分5本）をすべてRead toolで読み込む。
+各記事の公開URLは logs/daily/ の当週の *_note_url.txt から取得してメモすること（まとめ記事内の内部リンクに使う）。"""
+        step15_research = ""
+        step1_note = "\n**本日は土曜まとめモード。個別ニュースの再掲ではなく、今週の5本を貫く「1週間の論点」を1つ立てること（例:「◯◯と◯◯が同時に動いた1週間」型の編集見出し）。docs/perspectives.md の仮説がこの1週間でどう動いたかも論点候補にする。**"
+        step4_note = "\n**土曜まとめ記事の要件: タイトルに週の論点を立てる（個別ニュース名の羅列にしない）/ 今週の各記事への内部リンクをStep 0で取得したURLで張る / perspectives.md の伏線の進捗に触れる / 記事冒頭に約50字のリード文を置く。**"
+    elif wd == 6:
+        # 日曜: 運営実録モード
+        step0_news = """## Step 0: 運営データの読み込み（日曜実録モード）
+本日は「SODA運営実録」の日。ニュース収集は行わない。代わりに以下を読み込む。
+1. logs/ops/follower_log.jsonl — フォロワー推移（今週分と前週比）
+2. logs/metrics/ の当週分JSON — 記事別ビュー・スキ（当週各記事の読まれ方）
+3. logs/daily/ の当週分 *_post_analysis.md — 日次分析の結論
+4. Bash toolで `git log --oneline --since="7 days ago"` を実行 — 今週システムに入った変更の一覧"""
+        step15_research = ""
+        step1_note = "\n**本日は日曜実録モード。テーマは「今週のSODA運営で何が起き、何を変え、読者は何を真似できるか」。docs/content_strategy.md の三点セット構成（①今週の数字 ②何を変えたか・なぜか ③読者が真似する場合の再現手順）を必ず守ること。数字は良くても悪くても正直に書く。**"
+        step4_note = "\n**日曜実録記事の要件: 三点セット構成（数字→変更と理由→読者向け再現手順）を見出しで明示する / 数字には出どころ（自動収集の仕組み）を一言添える / 検証できない主張・誇張をしない / 数字の羅列だけで終わらせず、必ず「読者が自分の発信・AI活用に適用する具体手順」で締める / 記事冒頭に約50字のリード文を置く。**"
+        step76_override = f"""## Step 7.6: 本日記事のマガジン判定
+本日は実録記事のため、判定不要。logs/daily/{ds}_magazine.txt に「SODA運営実録 — AI全自動メディアの数字と中身」と1行保存する。"""
+
+    step15_block = f"\n\n{step15_research}" if step15_research else ""
+
+    step76_default = f"""## Step 7.6: 本日記事のマガジン判定
+本日のnote記事を以下の3誌のうち最も主題が近い1誌に判定し、誌名のみ（1行）を logs/daily/{ds}_magazine.txt に保存する。
+- AIとマネーの定点観測（投資・M&A・資金調達・企業価値）
+- AIと雇用のゆくえ（レイオフ・働き方・スキル・組織）
+- AI業界の構造転換（企業戦略・競争・規制・技術転換）"""
+    step76 = step76_override if step76_override else step76_default
 
     return f"""SODAの本日（{ds}）のコンテンツパイプラインを全工程実行する。
 
@@ -52,24 +114,11 @@ def build_pipeline_prompt(today: date) -> str:
 6. audience/winning_topics.md — 反応が取れた確定テーマ（あれば優先的に参考にする）
 7. docs/voice_guide.md — 声の基準書（WriterとEditorは必ず参照すること）
 8. docs/perspectives.md — SODA視点ライブラリ（CEOとWriterは必ず参照すること）
+9. docs/content_strategy.md — コンテンツ戦略（CEOとPlannerは曜日編成と商品トリガーを把握すること）
 
 ファイルが存在しない場合はスキップしてよい。
 
-## Step 0: ニュース収集（Step 1の前に必ず実行）
-WebSearch toolで以下のクエリを検索し、本日時点の最新AIニュースを把握する。
-
-- 検索クエリ: "AI news today {ds}"
-- 検索クエリ: "生成AI ニュース {ds}"
-- 検索クエリ: "AI layoffs OR funding OR acquisition news {ds}"
-- 検索クエリ: "AI industry news {ds_prev}"
-
-取得した情報から **本日公開・発表されたもの** に絞り、以下を判断基準にトップ3を選ぶ:
-1. 読者（AI・副業・発信に関心ある20代）が「それ知らなかった」と感じるか
-2. 「結局なにがすごいのか」を3分で説明できる規模感か
-3. 自分ごとにできるか（ツール・働き方・副業への影響）
-
-選んだトップ3をメモしてStep 1のCEOに渡すこと。
-ニュースが見つからない・古い情報しかない場合はStep 0をスキップしてよい。
+{step0_news}
 
 ## Step 1: CEO — 本日の優先テーマ決定
 agents/ceo.md を読み、CEOとして本日の優先テーマを決定する。
@@ -77,16 +126,7 @@ agents/ceo.md を読み、CEOとして本日の優先テーマを決定する。
 **該当ニュースがない場合は過去3〜7日から「今振り返ると」型で1本選ぶ。**
 **朝会議ログ（logs/meeting/{ds}_meeting.md）のCEO最終判断・Writerへの指示を最優先で参照すること。**
 **docs/perspectives.md の「ウォッチ中の仮説」に回収予定時期が到来したものがあれば、その回収をその日のテーマ候補として最優先で検討すること。**
-出力形式: agents/ceo.md の「優先テーマを出すとき」フォーマット。
-
-## Step 1.5: Researcher — 一次取材（Step 2の前に必ず実行）
-agents/researcher.md を読み、Step 1でCEOが採用したテーマ1本を深掘りする。
-- 一次情報（公式発表・プレスリリース・元記事）をWebFetchで実際に開いて読む
-- 英語ソースを含む追加検索をWebSearchで3〜5本行う
-- 反対意見・懐疑的な見方を最低1つ探す（見つからなければ「探したが見つからなかった」と記録）
-- 比較に使える過去の数字（前年・前四半期・類似事例）を集める
-取材結果を content/news/{ds}_research.md に agents/researcher.md の「取材ノート」フォーマットで保存する。
-一次情報が取得できない場合も、確認できた範囲で取材ノートを保存する（4区分の見出しは維持する）。
+出力形式: agents/ceo.md の「優先テーマを出すとき」フォーマット。{step1_note}{step15_block}
 
 ## Step 2: Planner — 企画案5本
 agents/planner.md を読み、CEOのテーマに基づいて企画案を5本出す。
@@ -102,7 +142,7 @@ agents/writer.md を読み、採用企画をもとに以下を下書きしてフ
 **アイデア資産（ideas）に使えるネタ・切り口があれば積極的に取り込むこと。**
 **朝会議ログのWriterへの指示がある場合は必ず従うこと。**
 **note記事の事実・数字は content/news/{ds}_research.md（取材ノート）に記載のあるものだけを使うこと。ノートにない数字は書かない。「未確認事項」の内容は本文でも未確認・報道ベースと明示する。取材ノートが存在しない場合のみStep 0の検索結果ベースで執筆してよい。**
-**docs/perspectives.md を読み、接続できる持論・伏線があれば本文で明示的に接続すること（agents/writer.md「SODA視点の接続ルール」参照）。**
+**docs/perspectives.md を読み、接続できる持論・伏線があれば本文で明示的に接続すること（agents/writer.md「SODA視点の接続ルール」参照）。**{step4_note}
 
 - note記事 → content/note/{ds}_[タイトル略称].md
   「AI×お金・雇用・構造転換」3テーマ該当ニュースの深掘り1本（agents/writer.md「note記事のジャンル方針」参照）。
@@ -154,11 +194,7 @@ docs/perspectives.md を更新して上書き保存する。
 - 今日の記事で回収（答え合わせ）した仮説があれば、結果（当たり/外れ/部分的）を添えて「回収済みアーカイブ」へ移動する
 - 「ウォッチ中の仮説」が15件を超える場合は、古い・弱いものからアーカイブへ移す
 
-## Step 7.6: 本日記事のマガジン判定
-本日のnote記事を以下の3誌のうち最も主題が近い1誌に判定し、誌名のみ（1行）を logs/daily/{ds}_magazine.txt に保存する。
-- AIとマネーの定点観測（投資・M&A・資金調達・企業価値）
-- AIと雇用のゆくえ（レイオフ・働き方・スキル・組織）
-- AI業界の構造転換（企業戦略・競争・規制・技術転換）
+{step76}
 
 ## 全体ルール
 - 全テキストは日本語
