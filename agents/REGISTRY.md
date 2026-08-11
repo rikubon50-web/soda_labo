@@ -14,12 +14,12 @@ CEO・Secretaryはここを参照して、何が使えるかを把握する。
 | Planner | agents/planner.md | 企画案量産・タイトル・切り口提案 |
 | Writer | agents/writer.md | 記事・X投稿・動画台本の下書き |
 | Editor | agents/editor.md | 品質向上・トーン統一・冗長削除 |
+| Researcher | agents/researcher.md | 採用テーマの一次取材・取材ノート作成 |
 
 | Analyst | agents/analyst.md | Xメトリクス分析・勝ちパターン抽出・次週テーマ提案 |
 | Growth | agents/growth.md | CTA最適化・導線設計・無料→購買の接続管理 |
 
 ### 追加候補（未作成）
-- Research Claude：ニュース収集・ファクト整理・トレンド要約
 - Product Claude：マネタイズ設計・デジタルプロダクト企画
 
 ---
