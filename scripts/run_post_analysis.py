@@ -111,19 +111,56 @@ def build_prompt(data: dict, today: date) -> str:
         "",
     ]
 
-    # メトリクス詳細（直近8日分のnoteメトリクス推移）
+    # 昨日の記事を特定するキー/タイトル（メトリクス一覧からの照合用）
+    yesterday_key = ""
+    if data.get("note_url"):
+        yesterday_key = data["note_url"].rstrip("/").rsplit("/", 1)[-1]
+    yesterday_title = ""
+    for line in (data.get("note_content") or "").splitlines():
+        stripped = line.strip()
+        if stripped.startswith("# "):
+            yesterday_title = stripped[2:].strip()
+            break
+
+    def _is_yesterday_article(a: dict) -> bool:
+        if yesterday_key and a.get("key") == yesterday_key:
+            return True
+        title = a.get("title", "")
+        if yesterday_title and title and (
+            title.startswith(yesterday_title) or yesterday_title.startswith(title)
+        ):
+            return True
+        return False
+
+    # メトリクス詳細（直近8日分のnoteメトリクス推移。プロンプト肥大化を避けるため
+    # 各日ビュー上位20件に絞り、昨日の記事が上位20件外なら個別に追記する）
     if data["metrics"]:
-        lines.append("### noteメトリクス（直近8日分の推移、日付降順）")
+        lines.append(
+            "### noteメトリクス（直近8日分の推移、日付降順、各日ビュー上位20件+昨日の記事）"
+        )
         for m in sorted(data["metrics"], key=lambda x: x.get("date", ""), reverse=True):
             articles = m.get("articles") or []
-            lines.append(f"- {m.get('date')}（{len(articles)}記事）")
-            for a in sorted(articles, key=lambda x: x.get("views", 0), reverse=True):
+            sorted_articles = sorted(articles, key=lambda x: x.get("views", 0), reverse=True)
+            top = sorted_articles[:20]
+            lines.append(f"- {m.get('date')}（{len(articles)}記事中、ビュー上位20件+昨日の記事）")
+            for a in top:
                 lines.append(
                     f"  - ビュー:{a.get('views', '?')} "
                     f"スキ:{a.get('likes', '?')} "
                     f"コメント:{a.get('comments', '?')} "
                     f"— {a.get('title', '')}"
                 )
+            if (yesterday_key or yesterday_title) and not any(
+                _is_yesterday_article(a) for a in top
+            ):
+                match = next((a for a in articles if _is_yesterday_article(a)), None)
+                if match:
+                    lines.append(
+                        f"  - [昨日の記事] ビュー:{match.get('views', '?')} "
+                        f"スキ:{match.get('likes', '?')} "
+                        f"コメント:{match.get('comments', '?')} "
+                        f"— {match.get('title', '')}"
+                    )
     else:
         lines.append("### noteメトリクス\n（データなし — 定性分析のみ実施）")
 
