@@ -12,7 +12,7 @@ load_dotenv(SODA_DIR / ".env")
 # Claude CLI
 CLAUDE_BIN       = os.path.expanduser("~/.local/bin/claude")
 FALLBACK_MODEL   = "claude-haiku-4-5-20251001"
-PIPELINE_TIMEOUT = 1800   # 秒（30分）
+PIPELINE_TIMEOUT = 2700   # 秒（45分）取材・批評工程の追加分を含む
 PIPELINE_RETRIES = 5
 PIPELINE_WAIT    = 60     # リトライ間隔（秒）
 
