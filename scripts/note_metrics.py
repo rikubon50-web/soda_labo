@@ -21,10 +21,11 @@ import argparse
 from datetime import date, datetime
 from pathlib import Path
 
-SODA_DIR    = Path(__file__).parent.parent
-PROFILE_DIR = SODA_DIR / ".browser_profile" / "note"
-METRICS_DIR = SODA_DIR / "logs" / "metrics"
-ERRORS_DIR  = SODA_DIR / "logs" / "errors"
+SODA_DIR     = Path(__file__).parent.parent
+PROFILE_DIR  = SODA_DIR / ".browser_profile" / "note"
+METRICS_DIR  = SODA_DIR / "logs" / "metrics"
+ERRORS_DIR   = SODA_DIR / "logs" / "errors"
+FOLLOWER_LOG = SODA_DIR / "logs" / "ops" / "follower_log.jsonl"
 
 STATS_API_TEMPLATE = "https://note.com/api/v1/stats/pv?filter=all&page={page}&sort=pv"
 MAX_PAGES = 50  # 安全装置（無限ループ防止。2026-08時点の公開記事は110件・約10ページ）
@@ -136,6 +137,33 @@ def parse_articles(raw: dict) -> list[dict]:
     return articles
 
 
+def read_follower_log() -> list[dict]:
+    """logs/ops/follower_log.jsonl を読み込む。壊れた行はスキップする"""
+    if not FOLLOWER_LOG.exists():
+        return []
+    entries = []
+    for line in FOLLOWER_LOG.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            entries.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return entries
+
+
+def append_follower_log(today: date, followers: int) -> None:
+    """logs/ops/follower_log.jsonl に当日分を追記する（同日分が既にあれば追記しない）"""
+    ds = str(today)
+    entries = read_follower_log()
+    if any(e.get("date") == ds for e in entries):
+        return
+    FOLLOWER_LOG.parent.mkdir(parents=True, exist_ok=True)
+    with FOLLOWER_LOG.open("a") as f:
+        f.write(json.dumps({"date": ds, "followers": followers}, ensure_ascii=False) + "\n")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true")
@@ -176,6 +204,11 @@ def main() -> int:
     out = METRICS_DIR / f"{date.today()}.json"
     out.write_text(json.dumps(result, ensure_ascii=False, indent=2))
     print(f"保存: {out}（{len(articles)}記事）")
+
+    # フォロワー数が取得できていれば記録する（未取得日はスキップ）
+    if followers is not None:
+        append_follower_log(date.today(), followers)
+
     return 0
 
 
