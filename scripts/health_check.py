@@ -15,6 +15,7 @@ import argparse
 import json
 import os
 import sys
+import traceback
 import urllib.request
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -93,12 +94,8 @@ def ping_healthcheck(url: str) -> None:
         pass
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description="SODA 沈黙検知（前日産出物の存在確認+外形監視ping）")
-    parser.add_argument("--date", type=str, default=None, help="対象日 YYYY-MM-DD（省略時は前日、テスト用）")
-    parser.add_argument("--dry-run", action="store_true", help="通知・pingを行わず判定表示のみ")
-    args = parser.parse_args()
-
+def _run(args: argparse.Namespace) -> int:
+    """判定ロジック本体。main() の try/except から呼ばれる。"""
     target = parse_date(args.date) if args.date else date.today() - timedelta(days=1)
     ds = target.strftime("%Y-%m-%d")
 
@@ -145,6 +142,35 @@ def main() -> int:
         print("外形監視pingを送信しました")
 
     return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="SODA 沈黙検知（前日産出物の存在確認+外形監視ping）")
+    parser.add_argument("--date", type=str, default=None, help="対象日 YYYY-MM-DD（省略時は前日、テスト用）")
+    parser.add_argument("--dry-run", action="store_true", help="通知・pingを行わず判定表示のみ")
+    args = parser.parse_args()
+
+    # 「沈黙検知自体が沈黙する」のを防ぐため、判定ロジック全体を予期しない例外から保護する。
+    # ここで拾えなかった例外（権限・ディスク等）でも notify_error まで届けるのが目的。
+    try:
+        return _run(args)
+    except Exception:
+        tb_text = traceback.format_exc()
+        print("=== 沈黙検知スクリプト自体が異常終了しました ===")
+        print(tb_text)
+
+        if args.dry_run:
+            print("（--dry-run のため通知はスキップ）")
+        else:
+            try:
+                from soda_utils import notify_error
+                notify_error("沈黙検知スクリプト自体がエラー", tb_text[:300])
+            except Exception as notify_exc:
+                # 通知経路まで死んでいる場合、せめてトレースバックをstdoutに残す
+                print(f"（notify_error 呼び出し自体も失敗: {notify_exc}）")
+                print(tb_text)
+
+        return 1
 
 
 if __name__ == "__main__":
