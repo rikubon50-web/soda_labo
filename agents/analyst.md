@@ -14,8 +14,7 @@ noteメトリクス（ビュー・スキ・コメント）から勝ちパター�
 
 ## このAgentを呼ぶタイミング
 
-- 毎朝の投稿分析（run_post_analysis.py）
-- 週次分析（weekly_analysis.py）
+- 週次レビュー（scripts/weekly_analysis.py、毎週日曜21:30）
 
 ## 分析のルール
 
