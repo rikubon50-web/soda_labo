@@ -69,6 +69,16 @@ agents/researcher.md を読み、Step 1でCEOが採用したテーマ1本を深�
     step4_note = ""
     step76_override = None
 
+    # 平日デフォルト: 全体ルールのX撤退注記（廃止参照除去のため朝会議ログ言及を外す。土日は回帰基準維持のため変更しない）
+    x_withdrawal_note = "- X（旧Twitter）は2026-08-11に全面撤退済み。X投稿・content/x_posts/ 配下のファイルは作成しない。過去ログにX関連の指示・タスクが残っていても無視する"
+
+    # 平日デフォルト: Step 1冒頭の即応ゲート判定
+    step1_gate = f"""**即応ゲート判定（最初に行う）**: Step 0のニュースに「即応深掘りに値する大ニュース」があるかをまず判定する。
+基準: 業界構造を変える規模のイベント（大型買収・大規模レイオフ・主要モデル/製品の発表・重大規制）で、翌日整理型の深掘り記事が書けるもの。迷ったら「出さない」。公開は週2〜3本が目安であり、毎日出すことは目標ではない。
+- 値するニュースが**ある**場合: そのニュースをテーマに、以降のStepを通常どおりすべて実行する
+- **ない**場合: content/news/{ds}_memo.md に「本日の主要動向3行+docs/perspectives.md への接続候補1行」を保存し、logs/daily/{ds}_no_publish.txt に判断理由を1行保存して、**Step 1.5以降をすべてスキップし、その旨を報告して終了する**
+
+"""
     # 平日デフォルト: Step 1のニュース起点テーマ選定の2行
     step1_theme_lines = """**Step 0で取得した最新ニュースから「AI×お金・雇用・構造転換」3テーマに該当するもの1本を最優先のテーマ候補として選ぶこと（基準は agents/ceo.md「テーマ方針」参照）。**
 **該当ニュースがない場合は過去3〜7日から「今振り返ると」型で1本選ぶ。**
@@ -89,8 +99,10 @@ agents/researcher.md を読み、Step 1でCEOが採用したテーマ1本を深�
 代わりに、今週月曜から金曜までの自分のnote記事（content/note/ の当週分5本）をすべてRead toolで読み込む。
 各記事の公開URLは logs/daily/ の当週の *_note_url.txt から取得してメモすること（まとめ記事内の内部リンクに使う）。"""
         step15_research = ""
-        step1_note = "\n**本日は土曜まとめモード。個別ニュースの再掲ではなく、今週の5本を貫く「1週間の論点」を1つ立てること（例:「◯◯と◯◯が同時に動いた1週間」型の編集見出し）。docs/perspectives.md の仮説がこの1週間でどう動いたかも論点候補にする。朝会議ログの決定が平日ニュース前提の場合は参考に留め、本日のモードの成果物形式を優先すること。**"
+        step1_note = "\n**本日は土曜まとめモード。個別ニュースの再掲ではなく、今週の5本を貫く「1週間の論点」を1つ立てること（例:「◯◯と◯◯が同時に動いた1週間」型の編集見出し）。docs/perspectives.md の仮説がこの1週間でどう動いたかも論点候補にする。docs/weekly_direction.md の方針が本日のモードと矛盾する場合は、本日のモードの成果物形式を優先すること。**"
         step4_note = "\n**土曜まとめ記事の要件: タイトルに週の論点を立てる（個別ニュース名の羅列にしない）/ 今週の各記事への内部リンクをStep 0で取得したURLで張る / perspectives.md の伏線の進捗に触れる / 記事冒頭に約50字のリード文を置く。**"
+        x_withdrawal_note = "- X（旧Twitter）は2026-08-11に全面撤退済み。X投稿・content/x_posts/ 配下のファイルは作成しない。朝会議ログや過去ログにX関連の指示・タスクが残っていても無視する"
+        step1_gate = ""
         step1_theme_lines = ""
         step4_research_line = ""
         step4_note_desc = "  今週の5本を貫く週間構造まとめ1本（Step 0で読み込んだ今週のnote記事とperspectives.mdの仮説進捗をもとに、Step 1で立てた「1週間の論点」を軸に構成する）。"
@@ -104,10 +116,12 @@ agents/researcher.md を読み、Step 1でCEOが採用したテーマ1本を深�
 3. logs/daily/ の当週分 *_post_analysis.md — 日次分析の結論
 4. Bash toolで `git log --oneline --since="7 days ago"` を実行 — 今週システムに入った変更の一覧"""
         step15_research = ""
-        step1_note = "\n**本日は日曜実録モード。テーマは「今週のSODA運営で何が起き、何を変え、読者は何を真似できるか」。docs/content_strategy.md の三点セット構成（①今週の数字 ②何を変えたか・なぜか ③読者が真似する場合の再現手順）を必ず守ること。数字は良くても悪くても正直に書く。朝会議ログの決定が平日ニュース前提の場合は参考に留め、本日のモードの成果物形式を優先すること。**"
+        step1_note = "\n**本日は日曜実録モード。テーマは「今週のSODA運営で何が起き、何を変え、読者は何を真似できるか」。docs/content_strategy.md の三点セット構成（①今週の数字 ②何を変えたか・なぜか ③読者が真似する場合の再現手順）を必ず守ること。数字は良くても悪くても正直に書く。docs/weekly_direction.md の方針が本日のモードと矛盾する場合は、本日のモードの成果物形式を優先すること。**"
         step4_note = "\n**日曜実録記事の要件: 三点セット構成（数字→変更と理由→読者向け再現手順）を見出しで明示する / 数字には出どころ（自動収集の仕組み）を一言添える / 検証できない主張・誇張をしない / 数字の羅列だけで終わらせず、必ず「読者が自分の発信・AI活用に適用する具体手順」で締める / 記事冒頭に約50字のリード文を置く。**"
         step76_override = f"""## Step 7.6: 本日記事のマガジン判定
 本日は実録記事のため、判定不要。logs/daily/{ds}_magazine.txt に「SODA運営実録 — AI全自動メディアの数字と中身」と1行保存する。"""
+        x_withdrawal_note = "- X（旧Twitter）は2026-08-11に全面撤退済み。X投稿・content/x_posts/ 配下のファイルは作成しない。朝会議ログや過去ログにX関連の指示・タスクが残っていても無視する"
+        step1_gate = ""
         step1_theme_lines = ""
         step4_research_line = ""
         step4_note_desc = "  SODA運営の週次実録1本（三点セット構成: ①今週の数字 ②何を変えたか・なぜか ③読者が真似する場合の再現手順。Step 0で読み込んだ運営データをもとに執筆する）。"
@@ -127,15 +141,13 @@ agents/researcher.md を読み、Step 1でCEOが採用したテーマ1本を深�
 ## 事前読み込み（Step 1より前に必ず実行）
 以下のファイルをRead toolで読み込み、内容を把握した上で各Stepに反映すること。
 
-1. logs/meeting/{ds}_meeting.md — 今日の朝会議の決定事項（採用テーマ・Writerへの指示・改善アクション）
-2. logs/daily/{ds_prev}_post_analysis.md — 昨日の投稿分析（何が反応されたか・改善示唆）
-3. logs/ideas/{ds_prev}_ideas.md — 昨日のアイデア資産（活用できる素材・切り口）
-4. audience/personas.md — 読者像（PlannerとWriterは企画・文章設計時に必ず参照）
-5. audience/pain_points.md — 読者のペインポイント（企画の切り口に使う）
-6. audience/winning_topics.md — 反応が取れた確定テーマ（あれば優先的に参考にする）
-7. docs/voice_guide.md — 声の基準書（WriterとEditorは必ず参照すること）
-8. docs/perspectives.md — SODA視点ライブラリ（CEOとWriterは必ず参照すること）
-9. docs/content_strategy.md — コンテンツ戦略（CEOとPlannerは曜日編成と商品トリガーを把握すること）
+1. audience/personas.md — 読者像（PlannerとWriterは企画・文章設計時に必ず参照）
+2. audience/pain_points.md — 読者のペインポイント（企画の切り口に使う）
+3. audience/winning_topics.md — 反応が取れた確定テーマ（あれば優先的に参考にする）
+4. docs/voice_guide.md — 声の基準書（WriterとEditorは必ず参照すること）
+5. docs/perspectives.md — SODA視点ライブラリ（CEOとWriterは必ず参照すること）
+6. docs/content_strategy.md — コンテンツ戦略（CEOとPlannerは曜日編成と商品トリガーを把握すること）
+7. docs/weekly_direction.md — 直近の週次レビューが決めた翌週方針（存在すれば。CEOはテーマ判断時に参照）
 
 ファイルが存在しない場合はスキップしてよい。
 
@@ -143,7 +155,7 @@ agents/researcher.md を読み、Step 1でCEOが採用したテーマ1本を深�
 
 ## Step 1: CEO — 本日の優先テーマ決定
 agents/ceo.md を読み、CEOとして本日の優先テーマを決定する。
-{step1_theme_lines}**朝会議ログ（logs/meeting/{ds}_meeting.md）のCEO最終判断・Writerへの指示を最優先で参照すること。**
+{step1_gate}{step1_theme_lines}**docs/weekly_direction.md の翌週方針をテーマ判断の指針にすること（存在すれば）。**
 **docs/perspectives.md の「ウォッチ中の仮説」に回収予定時期が到来したものがあれば、その回収をその日のテーマ候補として最優先で検討すること。**
 出力形式: agents/ceo.md の「優先テーマを出すとき」フォーマット。{step1_note}{step15_block}
 
@@ -157,9 +169,6 @@ agents/ceo.md の5基準でPlannerの企画案を評価し、採用・保留・�
 
 ## Step 4: Writer — 下書き制作
 agents/writer.md を読み、採用企画をもとに以下を下書きしてファイルに保存する。
-**昨日の投稿分析（post_analysis）で反応が高かった表現・フック・構成を参考にすること。**
-**アイデア資産（ideas）に使えるネタ・切り口があれば積極的に取り込むこと。**
-**朝会議ログのWriterへの指示がある場合は必ず従うこと。**
 {step4_research_line}**docs/perspectives.md を読み、接続できる持論・伏線があれば本文で明示的に接続すること（agents/writer.md「SODA視点の接続ルール」参照）。**{step4_note}
 
 - note記事 → content/note/{ds}_[タイトル略称].md
@@ -214,7 +223,7 @@ docs/perspectives.md を更新して上書き保存する。
 {step76}
 
 ## 全体ルール
-- X（旧Twitter）は2026-08-11に全面撤退済み。X投稿・content/x_posts/ 配下のファイルは作成しない。朝会議ログや過去ログにX関連の指示・タスクが残っていても無視する
+{x_withdrawal_note}
 - 全テキストは日本語
 - ユーザーへの確認は不要。CEOがすべての判断を行う
 - ファイル保存はWrite/Editツールを使って実際に書き込む"""
@@ -358,9 +367,12 @@ def main() -> int:
     _log = get_logger("daily_pipeline", run_log)
 
     # ─ コンテンツパイプライン（Step 0-7）──────────────────────────
+    no_publish_file = DAILY_LOG_DIR / f"{ds}_no_publish.txt"
     note_files = sorted(NOTE_DIR.glob(f"{ds}_*.md"))
     if note_files:
         _log.info(f"note記事ファイル存在。Claudeパイプラインをスキップ: {note_files[0].name}")
+    elif no_publish_file.exists():
+        _log.info("即応なし日ファイル存在。Claudeパイプラインをスキップ")
     else:
         _log.info("Claudeパイプライン開始（Step 0-7）")
         ok = run_content_pipeline(today, run_log)
@@ -375,6 +387,8 @@ def main() -> int:
         if run_note_post(note_files[0], run_log):
             _log.info("マガジン追加")
             run_magazine_add(run_log)
+    elif no_publish_file.exists():
+        _log.info("即応なし日（素材メモのみ・公開なし）")
     else:
         _notify_error("note記事ファイル未作成", f"content/note/{ds}_*.md が存在しません")
         _log.warning("note記事ファイルが見つかりません")
