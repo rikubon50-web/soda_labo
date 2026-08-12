@@ -230,6 +230,8 @@ def build_prompt(data: dict, today: date) -> str:
         "1. agents/ceo.md、agents/secretary.md、agents/planner.md、"
         "agents/writer.md、agents/editor.md を Read toolで読み込む",
         "2. 下記「前日データ」と「会議フォーマット」に従い、全Agent会議を進行する",
+        "   注意: X（旧Twitter）は2026-08-11に全面撤退済み。前日データや過去の会議ログに"
+        "X関連の記述・持ち越しタスクがあっても、X投稿の計画・タスク化・持ち越しは一切しない",
         f"3. 会議まとめを logs/meeting/{today}_meeting.md に Write toolで保存する",
         "",
         "## 前日データ",
