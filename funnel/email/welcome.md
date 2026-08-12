@@ -30,11 +30,10 @@ https://drive.google.com/file/d/1Cku1xhCGzUwEAdfHmO4A6w6lniErZXa4/view?usp=shari
 
 ---
 
-毎日の実験記録をXとnoteで公開しています。
-X: @SODA_LABO
+毎日の実験記録をnoteで公開しています。
 note: note.com/soda_labo
 
-何かあればXのDMでお気軽に。
+何かあればこのメールへの返信でお気軽に。
 
 SODA
 ```
