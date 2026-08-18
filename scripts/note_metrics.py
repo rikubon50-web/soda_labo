@@ -205,9 +205,13 @@ def main() -> int:
     out.write_text(json.dumps(result, ensure_ascii=False, indent=2))
     print(f"保存: {out}（{len(articles)}記事）")
 
-    # フォロワー数が取得できていれば記録する（未取得日はスキップ）
+    # フォロワー数が取得できていれば記録する（未取得日はスキップ）。
+    # 追記に失敗してもメトリクス本体は保存済みなので、警告だけ出して成功扱いにする
     if followers is not None:
-        append_follower_log(date.today(), followers)
+        try:
+            append_follower_log(date.today(), followers)
+        except Exception as e:
+            print(f"フォロワーログ追記失敗（メトリクス保存は完了済み）: {e}", file=sys.stderr)
 
     return 0
 
