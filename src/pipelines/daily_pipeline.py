@@ -111,7 +111,7 @@ agents/researcher.md を読み、Step 1でCEOが採用したテーマ1本を深�
 本日は「SODA運営実録」の日。ニュース収集は行わない。代わりに以下を読み込む。
 1. logs/ops/follower_log.jsonl — フォロワー推移（今週分と前週比）
 2. logs/metrics/ の当週分JSON — 記事別ビュー・スキ（当週各記事の読まれ方）
-3. logs/daily/ の当週分 *_post_analysis.md — 日次分析の結論
+3. logs/daily/ の当週分 *_no_publish.txt — 今週「出さない」と判断した日とその理由（Glob toolで探す。1件も無い週は「今週は見送りゼロ」と扱ってスキップしてよい）
 4. Bash toolで `git log --oneline --since="7 days ago"` を実行 — 今週システムに入った変更の一覧"""
         step15_research = ""
         step1_note = "\n**本日は日曜実録モード。テーマは「今週のSODA運営で何が起き、何を変え、読者は何を真似できるか」。docs/content_strategy.md の三点セット構成（①今週の数字 ②何を変えたか・なぜか ③読者が真似する場合の再現手順）を必ず守ること。数字は良くても悪くても正直に書く。docs/weekly_direction.md の方針が本日のモードと矛盾する場合は、本日のモードの成果物形式を優先すること。**"
