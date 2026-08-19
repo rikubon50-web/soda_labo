@@ -171,6 +171,7 @@ agents/writer.md を読み、採用企画をもとに以下を下書きしてフ
 
 - note記事 → content/note/{ds}_[タイトル略称].md
 {step4_note_desc}
+  **ファイルの1行目は必ず `# タイトル` 形式（Markdown見出し）で書く（note_post.pyがこの行をタイトルとして抽出する。平文のタイトル行は不可）。**
   記事末尾に agents/writer.md の「note記事ハッシュタグルール」に従い #タグ を5つ付与する。
 
 - 短尺動画台本 → content/short_videos/{ds}_[タイトル略称].md

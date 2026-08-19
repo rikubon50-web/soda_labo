@@ -83,9 +83,17 @@ def load_ceo_score() -> int | None:
 def parse_article(filepath: str) -> tuple[str, str]:
     content = Path(filepath).read_text(encoding="utf-8")
     lines = content.splitlines()
-    title = next((l.lstrip("# ").strip() for l in lines if l.startswith("# ")), "無題")
-    body_lines = [l for l in lines if l.strip() != f"# {title}"]
-    return title, "\n".join(body_lines).strip()
+    title = next((l.lstrip("# ").strip() for l in lines if l.startswith("# ")), None)
+    if title:
+        body_lines = [l for l in lines if l.strip() != f"# {title}"]
+        return title, "\n".join(body_lines).strip()
+    # `# 見出し` が無い場合のフォールバック: 最初の非空行をタイトルとして扱う。
+    # 「無題」のまま公開する事故（2026-08-18/19に発生）を二度と起こさない
+    first = next((l.strip() for l in lines if l.strip()), None)
+    if not first:
+        raise ValueError(f"記事が空です: {filepath}")
+    body_lines = [l for l in lines if l.strip() != first]
+    return first.lstrip("# ").strip(), "\n".join(body_lines).strip()
 
 
 def post_to_note(filepath: str, dry_run: bool = False) -> None:
